@@ -82,6 +82,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (error) {
                 console.warn('Erro ao obter sessão inicial:', error.message);
                 if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid_grant')) {
+                    // Limpar completamente o localStorage para forçar novo login
+                    console.warn('Token inválido detectado. Limpando dados de sessão...');
+                    localStorage.removeItem('sb-otgfbjjfpgpywiyppjtd-auth-token');
                     supabase.auth.signOut();
                 }
                 setLoading(false);
@@ -123,6 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const fetchProfile = async (user: User) => {
         const isDev = user.email === DEVELOPER_EMAIL;
+        console.log('[AuthContext] Fetching profile for user:', user.id, user.email);
 
         try {
             // Buscar dados do funcionário no banco
@@ -144,7 +148,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .eq('user_id', user.id)
                 .single();
 
+            console.log('[AuthContext] Funcionario result:', { funcionario, error });
+
             if (error || !funcionario) {
+                console.warn('[AuthContext] Funcionario not found, using fallback profile');
                 // Se não encontrou funcionário, criar perfil básico usando metadados do Auth
                 const role = user.user_metadata?.role || (isDev ? 'developer' : 'admin');
                 const userProfile: UserProfile = {
@@ -155,6 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     empresa_id: user.user_metadata?.empresa_id,
                     permissoes: user.user_metadata?.permissoes || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
                 };
+                console.log('[AuthContext] Fallback profile:', userProfile);
                 setProfile(userProfile);
             } else {
                 // Determinar role baseado no nível da função
