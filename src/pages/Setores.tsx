@@ -35,14 +35,18 @@ const Setores = () => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchSetores();
-    }, [profile]);
+        if (profile?.empresa_id) {
+            fetchSetores();
+        }
+    }, [profile?.empresa_id]);
 
     const fetchSetores = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('setores')
             .select('*')
+            .eq('empresa_id', profile.empresa_id)
             .order('created_at', { ascending: false });
 
         if (error) console.error('Erro ao buscar setores:', error);

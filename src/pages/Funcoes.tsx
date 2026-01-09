@@ -99,14 +99,25 @@ const Funcoes = () => {
     });
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (profile?.empresa_id) {
+            fetchData();
+        }
+    }, [profile?.empresa_id]);
 
     const fetchData = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
         const [funData, setOrData] = await Promise.all([
-            supabase.from('funcoes').select('*, setores(nome)').order('created_at', { ascending: false }),
-            supabase.from('setores').select('id, nome').eq('status', 'Ativo')
+            supabase
+                .from('funcoes')
+                .select('*, setores(nome)')
+                .eq('empresa_id', profile.empresa_id)
+                .order('created_at', { ascending: false }),
+            supabase
+                .from('setores')
+                .select('id, nome')
+                .eq('empresa_id', profile.empresa_id)
+                .eq('status', 'Ativo')
         ]);
 
         if (funData.data) setFuncoes(funData.data);
