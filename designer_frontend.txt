@@ -1,0 +1,29 @@
+﻿"Atue como um Engenheiro Frontend Sênior Especialista em React e Tailwind CSS. Vamos transformar o design visual exportado do Stitch em uma aplicação funcional.
+Identidade do Projeto:
+Nome do App: Vigya
+Logo: Substitua qualquer placeholder por um ícone de Escudo Estilizado (use ShieldCheck da biblioteca lucide-react) na cor Laranja Neon (#FF6D00).
+Fonte: Garanta que todo o projeto use a fonte 'Inter' ou 'Plus Jakarta Sans'.
+Estrutura do Layout (Main Layout): Crie um arquivo src/layouts/MainLayout.tsx. Ele deve ter:
+Fundo geral da página na cor 'Deep Void' (#0B0E14).
+Uma área de conteúdo principal à direita.
+Uma Sidebar (Menu Lateral) fixa à esquerda.
+Componente Crítico: A Sidebar Hierárquica (Igual à referência): Crie o componente src/components/Sidebar.tsx com as seguintes regras estritas baseadas na referência visual 'Signal Sigma':
+Estilo: Fundo escuro levemente mais claro que a página (#111827), sem borda direita, apenas uma sombra sutil.
+Comportamento de Acordeão (Nested Menu): Os itens principais devem poder expandir e recolher sub-itens.
+Estrutura de Dados do Menu (Mock):
+code
+Code
+Dashboard (Ícone: LayoutDashboard)
+
+ Gestão de Risco (Ícone: AlertTriangle) -> Sub-itens: Mapa de Risco, APR Digital, Permissões (PT).
+
+ Pessoal (Ícone: Users) -> Sub-itens: Colaboradores, Biometria, Treinamentos.
+
+ Controle de EPI (Ícone: HardHat) -> Sub-itens: Estoque, Entregas, Fichas.
+Estado Ativo: O item selecionado deve ter um brilho (glow) lateral laranja na esquerda e o texto deve ficar branco brilhante. Itens inativos devem ser cinza médio.
+Tipografia do Menu: Tamanho 14px, peso Medium.
+Dashboard Inicial: Renderize na área principal os componentes de 'Bento Grid' e 'Gráficos Neon' que vieram do código do Stitch.
+Ação: Analise os arquivos atuais, organize a estrutura de pastas e implemente o MainLayout com essa Sidebar avançada agora."
+Menus estilo árvore/hierárquico como na imagem em anexo
+
+

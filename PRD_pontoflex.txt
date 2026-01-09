@@ -1,0 +1,555 @@
+﻿1. VISÃO GERAL
+Nome: PontoFlex Base: Módulo de Ponto do EngFlow (já validado e funcionando) Diferencial: Produto standalone focado APENAS em controle de ponto
+
+2. MÓDULOS E TELAS EXISTENTES
+
+2.1 CADASTRO DE SETORES
+Tela: Lista de Setores
+Cards estatísticas:
+    • Total de Setores cadastrados 
+DataTable com colunas:
+    • Nome do Setor (com ícone UserCog) 
+    • Descrição 
+    • Colaboradores (quantidade) 
+    • Status (Ativo/Inativo) 
+    • Ações (Editar, Excluir) 
+Funcionalidades:
+    • Busca global por nome/descrição 
+    • Filtro por status (Ativo/Inativo) 
+    • Botão "Novo Setor" (requer permissão criar_setores) 
+Modal: Novo/Editar Setor
+Campos:
+    • Nome do Setor (texto, obrigatório) - placeholder "Ex: Engenharia" 
+    • Descrição (texto, obrigatório) - placeholder "Descreva as responsabilidades do setor" 
+Botões:
+    • Cancelar 
+    • Cadastrar / Atualizar 
+
+2.2 CADASTRO DE FUNÇÕES
+Tela: Lista de Funções
+Cards estatísticas:
+    • Total de Funções 
+    • Níveis hierárquicos (quantidade única de níveis) 
+    • Colaboradores distribuídos nas funções 
+DataTable com colunas:
+    • Função (nome + setor abaixo em texto menor) 
+    • Descrição 
+    • Nível (badge: Gestão/Técnico/Operacional) 
+    • Permissões (quantidade de permissões) 
+    • Colaboradores (quantidade) 
+    • Ações (Editar, Excluir) 
+Funcionalidades:
+    • Busca global 
+    • Filtro por nível (Gestão/Técnico/Operacional) 
+    • Botão "Nova Função" (requer permissão criar_funcoes) 
+Modal: Nova/Editar Função
+Campos:
+    • Nome da Função (texto, obrigatório) - placeholder "Ex: Gerente de Obras" 
+    • Descrição (texto, obrigatório) 
+    • Setor (dropdown dos setores cadastrados, obrigatório) 
+    • Nível (dropdown, obrigatório): 
+        ◦ 1 = Gestão 
+        ◦ 2 = Técnico 
+        ◦ 3 = Operacional 
+Seção Permissões:
+    • Botões globais: "Marcar Todas" | "Desmarcar Todas" 
+    • Accordion por módulo (expandido por padrão) 
+    • Cada módulo tem botão "Marcar/Desmarcar" próprio 
+    • Badge mostrando "X de Y" permissões selecionadas no módulo 
+    • Cada permissão: checkbox + nome + descrição pequena 
+Módulos de Permissões (do arquivo permissions.ts):
+    • Módulo Ponto: gerenciar_ponto, editar_ajustes_ponto, criar_jornadas, criar_tipos_afastamento, criar_tipos_justificativas 
+    • Módulo Cadastros: criar_setores, criar_funcoes, criar_funcionarios 
+    • (outros módulos serão removidos no PontoFlex) 
+
+2.3 CADASTRO DE FUNCIONÁRIOS
+Tela: Lista de Funcionários
+Cards estatísticas:
+    • Total de funcionários cadastrados 
+    • Ativos (trabalhando atualmente) 
+    • Funções diferentes 
+    • Setores diferentes 
+DataTable com colunas:
+    • Funcionário (avatar + nome + email abaixo) 
+    • Função/Setor (função + setor abaixo) 
+    • Status (badge: Ativo/Inativo/Férias) 
+    • Ações (Editar, Excluir) 
+Funcionalidades:
+    • Busca global por nome, função, setor, email 
+    • Filtro por status 
+    • Botão "Novo Funcionário" (requer permissão criar_funcionarios) 
+Modal: Novo/Editar Funcionário
+Seção Dados Pessoais:
+    • Foto (upload opcional, preview circular) 
+    • Nome completo (texto, obrigatório) 
+    • Email (email, obrigatório) - validação de duplicidade 
+    • Telefone (texto com máscara, obrigatório) 
+    • CPF (texto com máscara XXX.XXX.XXX-XX, obrigatório) - validação de duplicidade 
+Seção Documentos:
+    • CTPS (texto, obrigatório) 
+    • Data de Admissão (date picker, obrigatório) 
+Seção Profissional:
+    • Setor (dropdown, ao selecionar filtra funções) 
+    • Função (dropdown filtrado por setor, obrigatório) 
+    • Jornada de Trabalho (dropdown, opcional - "Sem jornada definida") 
+Seção Acesso (apenas novo):
+    • Senha de Acesso (password, mínimo 6 caracteres) 
+    • Obs: Sistema gera senha automática e envia por email 
+Seção Endereço Residencial:
+    • Logradouro (texto, opcional) 
+    • Número (texto, opcional) 
+    • Bairro (texto, opcional) 
+    • Cidade (texto, opcional) 
+    • Estado (texto 2 caracteres, opcional) 
+    • CEP (texto com máscara, opcional) 
+Fluxo de Criação:
+    1. Valida email não duplicado em funcionários 
+    2. Valida CPF não duplicado 
+    3. Gera senha forte automática (12 caracteres) 
+    4. Chama Edge Function create-user para criar usuário no Supabase Auth 
+    5. Cria registro em funcionarios vinculando user_id 
+    6. Enfileira email com credenciais na tabela email_queue 
+    7. Email contém link para /auth?redirect=/primeira-senha 
+
+2.4 CADASTRO DE JORNADAS DE TRABALHO
+Tela: Lista de Jornadas
+Cards estatísticas:
+    • Total de jornadas cadastradas 
+    • Ativas (em uso) 
+    • Em uso por funcionários 
+Lista de cards (não DataTable):
+    • Nome da jornada + badge status 
+    • Descrição 
+    • Carga horária/dia 
+    • Horários (PE-PS / SE-SS formatado) 
+    • Intervalo (se tiver) 
+    • Botões Editar/Excluir 
+Funcionalidades:
+    • Busca por nome/descrição 
+    • Botão "Nova Jornada" (requer permissão criar_jornadas) 
+Modal: Nova/Editar Jornada
+Seção Dados Gerais:
+    • Nome (texto, obrigatório) 
+    • Descrição (textarea, opcional) 
+    • Carga Horária Diária (número 1-24, obrigatório) - default 8 
+Seção Intervalo:
+    • Tem Intervalo? (switch, default true) 
+    • Duração do Intervalo (número em minutos, default 60) - aparece só se tem intervalo 
+Seção Horários Esperados:
+    • Primeira Entrada - PE (time picker, default 08:00) 
+    • Primeira Saída - PS (time picker, default 12:00) 
+    • Segunda Entrada - SE (time picker, default 13:00) - aparece só se tem intervalo 
+    • Segunda Saída - SS (time picker, default 18:00) 
+
+2.5 TIPOS DE AFASTAMENTO
+Tela: Lista de Tipos de Afastamento
+DataTable com colunas:
+    • Nome 
+    • Cor (quadrado colorido + código hex) 
+    • Dias Máx. (número ou "Ilimitado") 
+    • Remuneração (badge: Remunerado/Não Remunerado) 
+    • Documentação (badge: Obrigatória/Opcional) 
+    • Status (badge: Ativo/Inativo) 
+    • Ações (Editar, Excluir) 
+Botão "Novo Tipo" (requer permissão criar_tipos_afastamento)
+Modal: Novo/Editar Tipo de Afastamento
+Campos:
+    • Nome (texto, mínimo 3 caracteres, obrigatório) 
+    • Cor (color picker + input hex, obrigatório, default #10b981) 
+    • Dias Máximos (número 1-365 ou vazio = ilimitado) 
+    • Descrição (textarea, opcional) 
+Switches:
+    • Remunerado (default true) 
+    • Documentação obrigatória (default false) 
+    • Ativo (default true) 
+
+2.6 TIPOS DE JUSTIFICATIVAS
+Tela: Lista de Tipos de Justificativas
+DataTable com colunas:
+    • Nome 
+    • Cor (quadrado colorido + código hex) 
+    • Documentação (badge: Obrigatória/Opcional) 
+    • Status (badge: Ativo/Inativo) 
+    • Ações (Editar, Excluir) 
+Botão "Novo Tipo" (requer permissão criar_tipos_justificativas)
+Modal: Novo/Editar Tipo de Justificativa
+Campos:
+    • Nome (texto, mínimo 3 caracteres, obrigatório) 
+    • Cor de Identificação (color picker + input hex + preview, default #3B82F6) 
+    • Descrição (textarea, opcional) 
+Switches:
+    • Documentação obrigatória (default false) 
+    • Ativo (default true) 
+
+2.7 GERENCIAR AFASTAMENTOS
+Tela: Lista de Afastamentos
+Tabela com colunas:
+    • Funcionário (nome + email abaixo) 
+    • Tipo (bolinha colorida + nome do tipo) 
+    • Período (ícone calendário + data início - data fim) 
+    • Dias (ícone relógio + quantidade calculada) 
+    • Status (badge: Aprovado/Rejeitado/Cancelado/Pendente) 
+    • Solicitado por (nome) 
+    • Ações 
+Ações por status:
+    • Sempre: Editar 
+    • Se Pendente: Aprovar (verde), Rejeitar (vermelho) 
+    • Se tem documento_url: Download 
+Botão "Novo Afastamento"
+Modal: Novo/Editar Afastamento
+Campos:
+    • Funcionário (dropdown dos funcionários ativos, obrigatório) 
+    • Tipo de Afastamento (dropdown dos tipos ativos, obrigatório) 
+    • Data Início (date picker, obrigatório) 
+    • Data Fim (date picker, obrigatório) 
+    • Motivo (textarea, obrigatório) 
+    • Arquivo (upload, opcional) 
+Fluxo de Aprovação:
+    • Ao criar: status = 'pendente', solicitado_por_id = funcionário do usuário logado 
+    • Ao aprovar: status = 'aprovado', data_aprovacao = agora, aprovado_por_id = funcionário do usuário 
+    • Ao rejeitar: status = 'rejeitado', observacao_aprovacao = motivo 
+
+2.8 GERENCIAR BIOMETRIAS
+Tela: Gerenciar Biometrias Faciais
+Cards estatísticas:
+    • Total de funcionários 
+    • Cadastrados (verde) 
+    • Pendentes validação (amarelo) 
+    • Link Enviado (azul) 
+    • Sem Cadastro (cinza) 
+Filtros:
+    • Busca por nome 
+    • Status (Todos/Cadastrados/Pendente Validação/Link Enviado/Sem Cadastro) 
+Tabela com colunas:
+    • Funcionário (nome + email) 
+    • Setor/Função 
+    • Status (badge colorido com ícone) 
+    • Ações 
+Status e Ações correspondentes:
+Status
+Badge
+Ações Disponíveis
+sem_cadastro
+Cinza "Sem Cadastro"
+Gerar Link
+link_enviado
+Azul "Link Enviado"
+Novo Link
+pendente_validacao
+Amarelo "Pendente"
+Validar, Desativar
+cadastrado
+Verde "Cadastrado"
+Desativar
+Modal: Link de Cadastro Remoto
+Exibe:
+    • Título com ícone de link 
+    • Descrição: "Envie este link para {nome}. Válido por 24 horas." 
+    • Link em caixa monospace (quebra de linha) 
+    • Botão "Copiar Link" 
+    • Botão "E-mail" (abre mailto com link no corpo) 
+
+2.9 CADASTRO DE BIOMETRIA REMOTO (Página Pública)
+URL: /cadastro-biometria?token={token}
+Estados da página:
+Loading:
+    • Spinner + "Verificando link..." 
+Invalid (token inválido):
+    • Ícone alerta vermelho 
+    • "Link Inválido" 
+    • "Solicite um novo link ao RH." 
+Expired (token expirado):
+    • Ícone relógio amarelo 
+    • "Link Expirado" 
+    • "Os links são válidos por 24 horas." 
+Used (token já usado):
+    • Ícone check verde 
+    • "Link Já Utilizado" 
+    • "Este link já foi usado." 
+Terms (aguardando aceite LGPD):
+    • Card de boas-vindas: "Olá, {nome}!" 
+    • Componente TermoLGPD 
+    • Ao assinar, avança para capture 
+Capture (captura biométrica):
+    • Card com instruções 
+    • Alerta LGPD 
+    • Componente ReconhecimentoFacial modo="cadastro" 
+Success:
+    • Ícone check verde 
+    • "Cadastro Concluído!" 
+    • "O RH será notificado para validar seu cadastro." 
+
+2.10 REGISTRO DE PONTO (Funcionário)
+Tela: Registro de Ponto
+Header do Funcionário:
+    • Ícone User em círculo 
+    • Nome do funcionário 
+    • Função - Setor 
+    • Badge da jornada 
+    • Badge "Biometria Facial Ativa" (se tem biometria cadastrada) 
+Card Relógio:
+    • Relógio digital grande (HH:MM:SS) - atualiza a cada segundo 
+    • Data por extenso: "Segunda-feira, 30 de dezembro de 2024" 
+    • "Horário de Brasília (UTC-3)" 
+Card Localização (automática):
+    • Componente LocalizacaoAutomatica 
+    • Mapa mostrando posição atual 
+    • Endereço por geocoding reverso 
+Card Botões de Registro: Grid 2x2 (mobile) ou 4 colunas (desktop):
+Tipo
+Label
+Cor
+entrada
+Entrada
+Azul
+saida_almoco
+Saída Almoço
+Laranja
+retorno_almoco
+Retorno Almoço
+Verde
+saida
+Saída
+Vermelho
+Estados do botão:
+    • Disponível: cor original, clicável 
+    • Registrado: verde com check, horário exibido, desabilitado 
+Card Registros de Hoje:
+    • Lista dos registros do dia 
+    • Cada registro mostra: badge tipo + label + horário 
+    • Mini mapa com a localização do registro 
+Card Meus Comprovantes:
+    • Lista dos últimos 5 comprovantes 
+    • Data + botão "Baixar" 
+Fluxo de Registro:
+    1. Usuário clica no botão do tipo desejado 
+    2. Sistema verifica se já existe registro desse tipo hoje 
+    3. Se já existe: toast "Registro já existe" 
+    4. Se não existe: abre modal de biometria 
+Modal Biometria:
+    • Título: "Validação Biométrica" 
+    • Descrição: "Posicione seu rosto para confirmar seu registro de {tipo}" 
+    • Componente ReconhecimentoFacial modo="verificacao" 
+    • onSucesso: executa registro com método 'facial' 
+    • onFallback: abre modal de senha 
+Modal Senha (Fallback):
+    • Título com ícone alerta laranja: "Confirmar Registro de Ponto" 
+    • Card com horário atual grande 
+    • Localização compacta 
+    • Input de senha 
+    • Botões: Cancelar, Confirmar Registro 
+Dados salvos no registro:
+    • funcionario_id 
+    • data_registro (YYYY-MM-DD) 
+    • hora_registro (HH:MM:SS) 
+    • timestamp_registro (ISO) 
+    • tipo_registro (entrada/saida_almoco/retorno_almoco/saida) 
+    • ip_address (via api.ipify.org) 
+    • user_agent 
+    • localizacao_gps (point) 
+    • metodo_autenticacao (senha/facial/fallback_senha) 
+    • confianca_facial (se biometria) 
+    • observacoes (status da localização) 
+Após registro:
+    • Gera comprovante PDF 
+    • Salva em comprovantes_ponto 
+    • Toast com botão para baixar 
+    • Atualiza lista de registros 
+
+2.11 CONTROLE DE PONTO (RH/Gestor)
+Tela: Controle de Ponto
+Cards Estatísticas:
+    • Total de Registros 
+    • Funcionários Presentes 
+    • Horas Extras 
+    • Atrasos 
+    • Faltas 
+    • Afastamentos 
+Filtros:
+    • Funcionário (dropdown: Todos ou específico) 
+    • Data Início (date picker, default: hoje) 
+    • Data Fim (date picker, default: hoje) 
+    • Setor (dropdown) 
+    • Jornada (dropdown) 
+Botões de Ação:
+    • Exportar Excel 
+    • Imprimir 
+    • Novo Afastamento 
+    • Histórico de Ajustes 
+    • Relatório de Ajustes 
+Componente AlertasPontoRH (pendências)
+Tabela de Registros: Colunas:
+    • Data 
+    • Funcionário (nome + função + setor) 
+    • PE (Primeira Entrada) + botão editar 
+    • PS (Primeira Saída) + botão editar 
+    • IE (Intervalo Entrada) + botão editar 
+    • IS (Intervalo Saída) + botão editar 
+    • SE (Segunda Entrada) + botão editar 
+    • SS (Segunda Saída) + botão editar 
+    • HE I (Hora Extra Início) + botão editar 
+    • HE F (Hora Extra Fim) + botão editar 
+    • Total (horas calculadas) 
+    • Status (badge: Completo/Incompleto/Afastado/Falta) 
+Cores dos horários:
+    • Entrada: texto azul, fundo azul claro 
+    • Saída: texto escuro, fundo accent 
+    • Intervalo: fundo secondary 
+    • Hora Extra: fundo azul mais forte 
+    • FALTA: texto vermelho "FALTA" 
+    • Vazio: "-" cinza 
+Cada célula de horário:
+    • Exibe horário formatado HH:MM 
+    • Botão de editar (ícone lápis pequeno) 
+    • Requer permissão editar_ajustes_ponto 
+Modal Ajuste de Ponto:
+    • Funcionário (readonly) 
+    • Data (readonly) 
+    • Tipo de registro original 
+    • Hora original 
+    • Nova hora (time picker) 
+    • Tipo de justificativa (dropdown) 
+    • Observações 
+Modal Histórico de Ajustes:
+    • Filtros por funcionário e período 
+    • Lista de todos os ajustes realizados 
+    • Quem ajustou, quando, motivo 
+Legenda de Cores:
+    • Componente LegendaCoresPonto no rodapé 
+
+3. COMPONENTES REUTILIZÁVEIS EXISTENTES
+Componente
+Localização
+Função
+ReconhecimentoFacial
+components/ponto/
+Captura e verificação facial
+LocalizacaoAutomatica
+components/ponto/
+Obtém GPS automaticamente
+MapaLocalizacao
+components/ponto/
+Exibe mapa com marker
+LocalizacaoCompacta
+components/ponto/
+Exibe endereço resumido
+TermoLGPD
+components/ponto/
+Termo de aceite biometria
+AlertasPontoRH
+components/ponto/
+Alertas de pendências
+ModalAjustePonto
+components/RH/
+Formulário de ajuste
+ModalAfastamento
+components/RH/
+Formulário de afastamento
+ModalHistoricoAjustes
+components/RH/
+Lista de ajustes
+RelatorioAjustes
+components/RH/
+Relatório exportável
+LegendaCoresPonto
+components/RH/
+Legenda visual
+DataTable
+components/ui/
+Tabela com filtros e busca
+PermissionGuard
+components/auth/
+Controle de permissões
+
+4. SERVICES EXISTENTES
+Service
+Função
+authPonto.ts
+Verificar senha de ponto
+biometriaService.ts
+Gerar link, validar, desativar biometria
+comprovantePonto.ts
+Gerar PDF do comprovante
+geolocalizacao.ts
+Obter coordenadas e endereço
+termosLGPDService.ts
+Obter IP e info do dispositivo
+facialRecognitionService.ts
+Processamento facial (face-api.js)
+
+5. HOOKS EXISTENTES
+Hook
+Função
+useAjustesPonto
+CRUD de ajustes
+useGeolocalizacao
+Estado de localização
+useOfflineSync
+Sincronização offline
+useOfflineCache
+Cache local
+useOptimizedSupabaseQuery
+Query otimizada
+useSupabaseCRUD
+Mutations CRUD
+
+6. TYPES EXISTENTES (ponto.ts)
+typescript
+TipoRegistroPonto = 'entrada' | 'saida_almoco' | 'retorno_almoco' | 'saida'
+
+TIPO_REGISTRO_LABELS = {
+  entrada: 'Entrada',
+  saida_almoco: 'Saída Almoço',
+  retorno_almoco: 'Retorno Almoço',
+  saida: 'Saída'
+}
+
+TIPO_REGISTRO_COLORS = {
+  entrada: 'bg-blue-500 hover:bg-blue-600',
+  saida_almoco: 'bg-orange-500 hover:bg-orange-600',
+  retorno_almoco: 'bg-green-500 hover:bg-green-600',
+  saida: 'bg-red-500 hover:bg-red-600'
+}
+
+DIAS_SEMANA = ['Segunda', 'Terça', ...]
+MESES_EXTENSO = ['janeiro', 'fevereiro', ...]
+
+interface FuncionarioCompleto { ... }
+interface RegistroPonto { ... }
+interface JornadaTrabalho { ... }
+interface Afastamento { ... }
+interface AjustePonto { ... }
+interface PontoDiario { ... }
+
+7. TABELAS DO BANCO (existentes)
+    • setores 
+    • funcoes (com permissoes jsonb) 
+    • funcionarios (com user_id FK para auth.users) 
+    • funcionarios_biometria 
+    • jornadas_trabalho 
+    • tipos_afastamento 
+    • tipos_justificativas_ponto 
+    • afastamentos 
+    • registros_ponto 
+    • comprovantes_ponto 
+    • ajustes_ponto 
+    • termos_aceitos 
+    • email_queue 
+
+8. O QUE REMOVER DO ENGFLOW PARA PONTOFLEX
+Remover completamente:
+    • Módulo Financeiro (Despesas, Requisições, Categorias) 
+    • Módulo Obras (Clientes, Obras, RDO) 
+    • Módulo Cronogramas 
+    • Módulo Kanban 
+    • Módulo BI 
+    • Módulo Orçamentos 
+    • Portal do Cliente 
+    • Admin multi-tenant complexo 
+Manter:
+    • Tudo de Ponto/RH 
+    • Cadastros base (Setores, Funções, Funcionários) 
+    • Sistema de permissões (simplificado) 
+    • Autenticação 
+    • Componentes UI compartilhados 
+

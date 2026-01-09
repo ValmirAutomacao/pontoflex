@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PontoFlex</string>
+    <string name="title_activity_main">PontoFlex</string>
+    <string name="package_name">com.pontoflex.app</string>
+    <string name="custom_url_scheme">com.pontoflex.app</string>
+</resources>

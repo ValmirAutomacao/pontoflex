@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# Capacitor
+android/app/src/main/assets/public/
+
+# Temp
+temp-vite/

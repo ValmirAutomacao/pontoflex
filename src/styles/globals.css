@@ -1,0 +1,191 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   PALETA DE CORES PONTOFLEX - PROFISSIONAL
+   - Cores corporativas e sérias
+   - Transmite: confiança, profissionalismo, segurança
+   ======================================== */
+
+:root {
+  /* Tema Claro (Padrão) - Clean e Profissional */
+  --color-bg-primary: #F8FAFC;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-sidebar: linear-gradient(180deg, #1E3A5F 0%, #0F2744 100%);
+  --color-bg-card: #FFFFFF;
+  --color-bg-hover: #F1F5F9;
+
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  /* Azul corporativo - confiança e profissionalismo */
+  --color-accent-primary: #0066CC;
+  --color-accent-secondary: #0052A3;
+  --color-accent-light: #E6F0FA;
+
+  /* Verde - sucesso e crescimento */
+  --color-accent-success: #059669;
+
+  /* Âmbar - atenção */
+  --color-accent-warning: #D97706;
+
+  /* Vermelho - urgência */
+  --color-accent-danger: #DC2626;
+
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-glow: 0 4px 14px 0 rgba(0, 102, 204, 0.25);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+/* Tema Escuro - Elegante e Moderno */
+.dark {
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-sidebar: linear-gradient(180deg, #0F172A 0%, #020617 100%);
+  --color-bg-card: #1E293B;
+  --color-bg-hover: #334155;
+
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #0F172A;
+
+  --color-accent-primary: #3B82F6;
+  --color-accent-secondary: #2563EB;
+  --color-accent-light: #1E3A5F;
+
+  --color-accent-success: #10B981;
+  --color-accent-warning: #F59E0B;
+  --color-accent-danger: #EF4444;
+
+  --color-border: #334155;
+  --color-border-light: #475569;
+
+  --shadow-glow: 0 4px 20px 0 rgba(59, 130, 246, 0.3);
+}
+
+/* ========================================
+   ESTILOS BASE
+   ======================================== */
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ========================================
+   SCROLLBAR CUSTOMIZADA
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent-primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-secondary);
+}
+
+/* ========================================
+   BOTÕES
+   ======================================== */
+
+.btn-primary {
+  background: var(--color-accent-primary);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-secondary);
+  transform: translateY(-1px);
+}
+
+/* ========================================
+   BADGES
+   ======================================== */
+
+.badge-success {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--color-accent-success);
+}
+
+.badge-warning {
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--color-accent-warning);
+}
+
+.badge-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-accent-danger);
+}
+
+.badge-info {
+  background: var(--color-accent-light);
+  color: var(--color-accent-primary);
+}
+
+/* ========================================
+   INPUTS
+   ======================================== */
+
+.input-theme {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.input-theme:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+/* ========================================
+   TRANSIÇÕES SUAVES
+   ======================================== */
+
+* {
+  transition-property: background-color, border-color, color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
