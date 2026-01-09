@@ -4,17 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Reset para silenciar alertas de console sobre propriedades obsoletas ou mal formatadas pelo build */
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* ========================================
    PALETA DE CORES PONTOFLEX - PROFISSIONAL
    - Cores corporativas e sérias
