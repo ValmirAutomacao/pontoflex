@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { onboardingService } from '../services/onboardingService';
+import { searchByCep } from '../services/cepService';
 import { maskCPF, maskTelefone, maskCEP, unmask } from '../utils/masks';
 import FotoUpload from '../components/FotoUpload';
 
@@ -62,6 +63,7 @@ const Funcionarios = () => {
     const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
     const [selectedFunc, setSelectedFunc] = useState<any>(null);
     const [sendingAction, setSendingAction] = useState<'email' | 'whatsapp' | null>(null);
+    const [searchingCep, setSearchingCep] = useState(false);
 
     useEffect(() => {
         if (profile?.empresa_id) {
@@ -649,7 +651,47 @@ const Funcionarios = () => {
                                     </div>
                                     <div>
                                         <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>CEP</label>
-                                        <input className={inputClass} value={formData.cep} onChange={e => setFormData({ ...formData, cep: maskCEP(e.target.value) })} />
+                                        <div className="flex gap-2">
+                                            <input
+                                                className={`${inputClass} flex-1`}
+                                                value={formData.cep}
+                                                onChange={e => setFormData({ ...formData, cep: maskCEP(e.target.value) })}
+                                                placeholder="00000-000"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    const cleanCep = unmask(formData.cep);
+                                                    if (cleanCep.length !== 8) {
+                                                        alert('CEP inválido. Digite um CEP com 8 dígitos.');
+                                                        return;
+                                                    }
+                                                    setSearchingCep(true);
+                                                    const result = await searchByCep(cleanCep);
+                                                    if (result) {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            logradouro: result.logradouro || prev.logradouro,
+                                                            bairro: result.bairro || prev.bairro,
+                                                            cidade: result.localidade || prev.cidade,
+                                                            estado: result.uf || prev.estado
+                                                        }));
+                                                    } else {
+                                                        alert('CEP não encontrado.');
+                                                    }
+                                                    setSearchingCep(false);
+                                                }}
+                                                disabled={searchingCep || formData.cep.length < 9}
+                                                className={`px-3 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors
+                                                    ${isDark
+                                                        ? 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 disabled:opacity-50'
+                                                        : 'bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50'
+                                                    }`}
+                                            >
+                                                <Search size={12} />
+                                                {searchingCep ? '...' : 'Buscar'}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="col-span-2">
                                         <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Logradouro</label>
