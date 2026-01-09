@@ -143,12 +143,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     funcoes:funcao_id (nome, nivel, permissoes),
                     setores:setor_id (nome),
                     funcionarios_biometria (status),
-                    empresas:empresa_id (status, bloqueado_por_atraso, razao_social, cnpj, endereco)
+                    empresas!funcionarios_empresa_id_fkey (status, bloqueado_por_atraso, razao_social, cnpj, endereco)
                 `)
                 .eq('user_id', user.id)
                 .single();
 
             console.log('[AuthContext] Funcionario result:', { funcionario, error });
+            if (error) {
+                console.error('[AuthContext] ERROR DETAILS:', JSON.stringify(error, null, 2));
+            }
 
             if (error || !funcionario) {
                 console.warn('[AuthContext] Funcionario not found, using fallback profile');
