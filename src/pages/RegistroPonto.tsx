@@ -26,6 +26,7 @@ import {
     X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import MiniMap from '../components/MiniMap';
 
 type Step = 'select' | 'biometria' | 'senha' | 'success' | 'error';
 
@@ -409,6 +410,22 @@ const RegistroPonto = () => {
                         <MapPin size={14} /> {localNome}
                     </div>
                 )}
+
+                {/* Mini Mapa de Localização Visual */}
+                {localizacao && (
+                    <div className="mt-4 max-w-[280px] mx-auto">
+                        <MiniMap
+                            latitude={localizacao.lat}
+                            longitude={localizacao.lng}
+                            height="120px"
+                            zoom={15}
+                        />
+                        <p className={`mt-1 text-[10px] text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            Lat: {localizacao.lat.toFixed(5)} | Lng: {localizacao.lng.toFixed(5)}
+                        </p>
+                    </div>
+                )}
+
                 <button
                     onClick={handleDownloadRelatorio}
                     className={`mt-4 flex items-center justify-center gap-2 px-6 py-2 rounded-full border text-xs font-bold uppercase tracking-tight transition-all ${isDark ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { searchAddress, GeocodeResult } from '../services/geocodingService';
 import type { Funcionario } from '../types';
 import { maskCEP, unmask } from '../utils/masks';
+import MiniMap from '../components/MiniMap';
 
 interface LocalTrabalho {
     id: string;
@@ -400,6 +401,20 @@ const LocaisTrabalho = () => {
                                     >
                                         <Navigation size={14} /> {gettingLocation ? 'Obtendo...' : 'Usar localização atual'}
                                     </button>
+
+                                    {/* Mini Mapa Visual */}
+                                    {formData.latitude && formData.longitude && (
+                                        <div className="mt-3">
+                                            <p className={`text-[10px] font-bold uppercase mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Prévia da Localização</p>
+                                            <MiniMap
+                                                latitude={parseFloat(formData.latitude)}
+                                                longitude={parseFloat(formData.longitude)}
+                                                radius={formData.raio_metros}
+                                                height="180px"
+                                            />
+                                        </div>
+                                    )}
+
                                     <div>
                                         <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Raio de Tolerância (metros)</label>
                                         <input required type="number" className={inputClass} value={formData.raio_metros} onChange={e => setFormData({ ...formData, raio_metros: parseInt(e.target.value) })} />
