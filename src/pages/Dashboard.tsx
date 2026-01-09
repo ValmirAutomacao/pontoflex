@@ -8,8 +8,11 @@ import {
     Calendar,
     CheckCircle2
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../services/supabaseClient'
 
 const ActivityItem = ({ image, title, author, status, time, statusColor }: any) => {
     const { isDark } = useTheme();
@@ -113,7 +116,7 @@ const Dashboard = () => {
             .limit(3);
 
         if (data) {
-            setRecentActivities(data.map(reg => ({
+            setRecentActivities(data.map((reg: any) => ({
                 id: reg.id,
                 image: (reg.funcionarios as any)?.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(reg.funcionarios as any)?.nome}`,
                 title: `Registro de ${reg.tipo === 'E' ? 'Entrada' : reg.tipo === 'S' ? 'Saída' : reg.tipo}`,
@@ -261,7 +264,7 @@ const Dashboard = () => {
                     <h2 className={`text-lg font-semibold mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Atividades Recentes</h2>
                     <div className="space-y-5">
                         {recentActivities.length > 0 ? (
-                            recentActivities.map((activity) => (
+                            recentActivities.map((activity: any) => (
                                 <ActivityItem
                                     key={activity.id}
                                     image={activity.image}
