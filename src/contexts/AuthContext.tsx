@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     empresa_id,
                     funcoes:funcao_id (nome, nivel, permissoes),
                     setores:setor_id (nome),
-                    funcionarios_biometria (status),
+                    funcionarios_biometria!funcionarios_biometria_funcionario_id_fkey (status),
                     empresas!funcionarios_empresa_id_fkey (status, bloqueado_por_atraso, razao_social, cnpj, endereco)
                 `)
                 .eq('user_id', user.id)
