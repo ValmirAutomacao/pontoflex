@@ -202,7 +202,7 @@ const Funcoes = () => {
     };
 
     const filteredFuncoes = funcoes.filter(f =>
-        f.nome.toLowerCase().includes(searchTerm.toLowerCase())
+        (f.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     const cardClass = `rounded-xl border transition-all ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-200 shadow-sm'

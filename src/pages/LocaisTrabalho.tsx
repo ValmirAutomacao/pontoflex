@@ -232,7 +232,7 @@ const LocaisTrabalho = () => {
     };
 
     const filteredLocais = locais.filter(l =>
-        l.nome.toLowerCase().includes(searchTerm.toLowerCase())
+        (l.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     const inputClass = `w-full border rounded-lg py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all ${isDark
@@ -453,7 +453,7 @@ const LocaisTrabalho = () => {
                                         </div>
 
                                         <div className={`space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar`}>
-                                            {allFuncionarios.filter(f => f.nome.toLowerCase().includes(funcSearch.toLowerCase())).map(func => {
+                                            {allFuncionarios.filter(f => (f.nome?.toLowerCase() || '').includes(funcSearch.toLowerCase())).map(func => {
                                                 const isSelected = selectedFuncIds.includes(func.id);
                                                 return (
                                                     <button

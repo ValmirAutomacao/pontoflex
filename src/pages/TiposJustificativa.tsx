@@ -62,7 +62,7 @@ const TiposJustificativa = () => {
         else fetchTipos();
     };
 
-    const filteredTipos = tipos.filter(t => t.nome.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredTipos = tipos.filter(t => (t.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
 
     const inputClass = `w-full border rounded-lg py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
         }`;

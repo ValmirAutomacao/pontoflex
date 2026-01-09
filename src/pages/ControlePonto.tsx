@@ -93,9 +93,9 @@ const ControlePonto = () => {
     // Listagem filtrada
     const filteredRegistros = React.useMemo(() => {
         return registrosAgrupados.filter(reg =>
-            reg.funcionario.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            reg.funcionario.funcao?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            reg.funcionario.setor?.toLowerCase().includes(searchQuery.toLowerCase())
+            (reg.funcionario.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+            (reg.funcionario.funcao?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+            (reg.funcionario.setor?.toLowerCase() || '').includes(searchQuery.toLowerCase())
         );
     }, [registrosAgrupados, searchQuery]);
 

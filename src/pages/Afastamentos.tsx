@@ -102,7 +102,7 @@ const Afastamentos = () => {
     };
 
     const filteredAfastamentos = afastamentos.filter(a => {
-        const matchSearch = a.funcionarios?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchSearch = (a.funcionarios?.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase());
         const matchStatus = statusFilter === 'Todos' || a.status === statusFilter;
         return matchSearch && matchStatus;
     });

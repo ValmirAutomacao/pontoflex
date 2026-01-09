@@ -117,8 +117,8 @@ const Setores = () => {
     };
 
     const filteredSetores = setores.filter(s =>
-        s.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+        (s.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (s.descricao?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     const cardClass = `rounded-xl p-5 border transition-all hover:shadow-md ${isDark

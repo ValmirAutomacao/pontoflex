@@ -218,8 +218,8 @@ const GestaoEmpresas: React.FC = () => {
     };
 
     const filteredEmpresas = empresas.filter(emp =>
-        emp.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email_comprador?.toLowerCase().includes(searchQuery.toLowerCase())
+        (emp.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (emp.email_comprador?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
 
     const columns = [

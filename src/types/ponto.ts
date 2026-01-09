@@ -25,7 +25,7 @@ export const MESES_EXTENSO = [
 // Entidades do banco
 export interface Empresa {
     id: string;
-    nome: string;
+    nome?: string;
     cnpj?: string;
     status: 'ativo' | 'pendente' | 'bloqueado' | 'suspenso';
     bloqueado_por_atraso: boolean;
