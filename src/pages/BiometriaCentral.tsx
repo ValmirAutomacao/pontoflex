@@ -196,7 +196,7 @@ const BiometriaCentral = () => {
 
     const filteredFuncionarios = funcionarios.filter(f => {
         const matchSearch = !searchQuery ||
-        return (f.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+            (f.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
             (f.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
         const matchStatus = statusFilter === 'todos' || f.biometria_status === statusFilter;
         return matchSearch && matchStatus;
