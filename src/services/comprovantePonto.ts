@@ -7,7 +7,7 @@ import type { RegistroPonto, Funcionario } from '../types';
  */
 export const gerarComprovantePDF = (params: {
     funcionario: { nome: string; cpf: string; funcao?: string; setor?: string };
-    empresa: { nome: string; cnpj: string };
+    empresa: { nome?: string; cnpj: string };
     tipoRegistro: string;
     dataHora: Date;
     localizacao?: { lat: number; lng: number; address?: string };
@@ -30,7 +30,7 @@ export const gerarComprovantePDF = (params: {
 
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
-    doc.text(params.empresa.nome, 25, 8, { align: 'center' });
+    doc.text(params.empresa.nome || 'Sua Empresa', 25, 8, { align: 'center' });
     doc.text(`CNPJ: ${params.empresa.cnpj}`, 25, 11, { align: 'center' });
 
     doc.line(5, 13, 45, 13);
@@ -62,7 +62,7 @@ export const gerarComprovantePDF = (params: {
  * Gera o Relatório Geral de Ponto (Espelho de Ponto)
  */
 export const gerarRelatorioPontoPDF = (params: {
-    empresa: { nome: string; cnpj: string; endereco: string };
+    empresa: { nome?: string; cnpj: string; endereco: string };
     funcionario: {
         nome: string;
         cpf: string;
@@ -85,7 +85,7 @@ export const gerarRelatorioPontoPDF = (params: {
     doc.text('RELATÓRIO ESPELHO DE PONTO', 105, 15, { align: 'center' });
 
     doc.setFontSize(10);
-    doc.text(params.empresa.nome, 10, 25);
+    doc.text(params.empresa.nome || 'Sua Empresa', 10, 25);
     doc.setFont('helvetica', 'normal');
     doc.text(`CNPJ: ${params.empresa.cnpj}`, 10, 30);
     doc.text(`Endereço: ${params.empresa.endereco}`, 10, 35);

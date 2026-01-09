@@ -68,7 +68,7 @@ const GestaoEmpresas: React.FC = () => {
         try {
             const { data, error } = await supabase.functions.invoke('send-onboarding-email', {
                 body: {
-                    companyName: empresa.nome,
+                    companyName: empresa.nome || 'Sua Empresa',
                     buyerEmail: empresa.email_comprador,
                     setupLink: setupUrl
                 }
@@ -182,7 +182,7 @@ const GestaoEmpresas: React.FC = () => {
     const handleOpenEdit = (empresa: Empresa) => {
         setEditingEmpresa(empresa);
         setFormData({
-            nome: empresa.nome,
+            nome: empresa.nome || '',
             nome_comprador: empresa.nome_comprador || '',
             email_comprador: empresa.email_comprador || '',
             funcao_comprador: empresa.funcao_comprador || ''
