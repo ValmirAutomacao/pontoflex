@@ -116,7 +116,7 @@ const RegistroPonto = () => {
                 funcionarioId: profile.funcionario_id,
                 tipoRegistro: selectedType,
                 localizacao: localizacao ? { lat: localizacao.lat, lng: localizacao.lng } : undefined,
-                metodoAutenticacao: 'RF',
+                metodoAutenticacao: 'facial',
                 confiancaFacial: confidence,
                 observacoes: localNome || undefined,
                 empresaId: profile.empresa_id
@@ -189,7 +189,7 @@ const RegistroPonto = () => {
                 funcionarioId: profile.funcionario_id,
                 tipoRegistro: selectedType,
                 localizacao: localizacao ? { lat: localizacao.lat, lng: localizacao.lng } : undefined,
-                metodoAutenticacao: 'SD',
+                metodoAutenticacao: 'senha',
                 observacoes: localNome || undefined,
                 empresaId: profile.empresa_id
             });

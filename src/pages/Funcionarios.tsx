@@ -16,7 +16,8 @@ import {
     MessageCircle,
     Smartphone,
     History,
-    ExternalLink
+    ExternalLink,
+    ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { onboardingService } from '../services/onboardingService';
@@ -32,6 +33,10 @@ interface Funcionario {
     created_at: string;
     setores?: { nome: string };
     funcoes?: { nome: string };
+    onboarding_completado?: boolean;
+    biometria_status?: string;
+    setup_token?: string;
+    whatsapp?: string;
 }
 
 const Funcionarios = () => {
@@ -413,7 +418,7 @@ const Funcionarios = () => {
                                             ? isDark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-100'
                                             : isDark ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20' : 'bg-slate-50 text-slate-400 border border-slate-100'
                                             }`}>
-                                            {func.biometria_status === 'Ativo' ? <ShieldCheckIcon size={10} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
+                                            {func.biometria_status === 'Ativo' ? <ShieldCheck size={10} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
                                             {func.biometria_status}
                                         </span>
                                     </td>
