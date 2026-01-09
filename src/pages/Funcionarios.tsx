@@ -272,7 +272,7 @@ const Funcionarios = () => {
 
     const handleSendEmail = async () => {
         if (!selectedFunc) return;
-        const empresaNome = profile?.empresa?.razao_social || profile?.empresa?.nome || 'Sua Empresa';
+        const empresaNome = profile?.empresa?.razao_social || 'Sua Empresa';
         console.log('[handleSendEmail] Enviando para:', selectedFunc.email, 'Empresa:', empresaNome);
         setSendingAction('email');
         const res = await onboardingService.sendEmailOnboarding({
@@ -289,7 +289,7 @@ const Funcionarios = () => {
 
     const handleSendWhatsApp = async () => {
         if (!selectedFunc) return;
-        const empresaNome = profile?.empresa?.razao_social || profile?.empresa?.nome || 'Sua Empresa';
+        const empresaNome = profile?.empresa?.razao_social || 'Sua Empresa';
         console.log('[handleSendWhatsApp] Gerando link para:', selectedFunc.nome, 'WhatsApp:', selectedFunc.whatsapp);
         const link = await onboardingService.getWhatsAppLink({
             funcionarioId: selectedFunc.id,
