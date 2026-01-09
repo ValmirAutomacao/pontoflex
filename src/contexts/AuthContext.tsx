@@ -78,7 +78,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     useEffect(() => {
         // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error) {
+                console.warn('Erro ao obter sessão inicial:', error.message);
+                if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid_grant')) {
+                    supabase.auth.signOut();
+                }
+                setLoading(false);
+                return;
+            }
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -86,11 +94,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } else {
                 setLoading(false);
             }
-        });
+        }).catch(() => setLoading(false));
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
+            async (event, session) => {
+                if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
+                    setLoading(false);
+                    return;
+                }
+
                 setSession(session);
                 setUser(session?.user ?? null);
                 if (session?.user) {

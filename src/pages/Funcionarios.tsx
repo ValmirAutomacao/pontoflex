@@ -70,16 +70,17 @@ const Funcionarios = () => {
     }, [profile?.empresa_id]);
 
     const fetchData = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
         const [funcRes, setRes, funRes, jorRes, locRes] = await Promise.all([
             supabase.from('funcionarios')
                 .select('*, setores:setor_id(nome), funcoes:funcao_id(nome), funcionarios_biometria!funcionarios_biometria_funcionario_id_fkey(status)')
-                .eq('empresa_id', profile!.empresa_id)
+                .eq('empresa_id', profile.empresa_id)
                 .order('nome'),
-            supabase.from('setores').select('id, nome').eq('empresa_id', profile!.empresa_id),
-            supabase.from('funcoes').select('id, nome').eq('empresa_id', profile!.empresa_id),
-            supabase.from('jornadas_trabalho').select('id, nome').eq('empresa_id', profile!.empresa_id),
-            supabase.from('locais_trabalho').select('id, nome').eq('empresa_id', profile!.empresa_id).eq('ativo', true)
+            supabase.from('setores').select('id, nome').eq('empresa_id', profile.empresa_id),
+            supabase.from('funcoes').select('id, nome').eq('empresa_id', profile.empresa_id),
+            supabase.from('jornadas_trabalho').select('id, nome').eq('empresa_id', profile.empresa_id),
+            supabase.from('locais_trabalho').select('id, nome').eq('empresa_id', profile.empresa_id).eq('ativo', true)
         ]);
 
         if (funcRes.error) {

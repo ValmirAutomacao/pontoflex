@@ -37,21 +37,21 @@ const Login = () => {
     };
 
     const inputClass = `w-full border rounded-lg py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all ${isDark
-            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-            : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+        : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
         }`;
 
     return (
         <div className={`min-h-screen flex items-center justify-center p-6 transition-colors ${isDark
-                ? 'bg-slate-900'
-                : 'bg-slate-50'
+            ? 'bg-slate-900'
+            : 'bg-slate-50'
             }`}>
             {/* Theme Toggle */}
             <button
                 onClick={toggleTheme}
                 className={`fixed top-6 right-6 p-2.5 rounded-lg transition-all ${isDark
-                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-                        : 'bg-white hover:bg-slate-50 text-slate-500 shadow-sm border border-slate-200'
+                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+                    : 'bg-white hover:bg-slate-50 text-slate-500 shadow-sm border border-slate-200'
                     }`}
             >
                 {isDark ? <Sun size={18} /> : <Moon size={18} />}
@@ -77,8 +77,8 @@ const Login = () => {
 
                 {/* Login Card */}
                 <div className={`rounded-2xl p-8 border shadow-lg ${isDark
-                        ? 'bg-slate-800 border-slate-700'
-                        : 'bg-white border-slate-200'
+                    ? 'bg-slate-800 border-slate-700'
+                    : 'bg-white border-slate-200'
                     }`}>
                     <div className="mb-6">
                         <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -94,8 +94,8 @@ const Login = () => {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className={`mb-5 p-3 rounded-lg flex items-center gap-3 ${isDark
-                                    ? 'bg-red-500/10 border border-red-500/20 text-red-400'
-                                    : 'bg-red-50 border border-red-100 text-red-600'
+                                ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                : 'bg-red-50 border border-red-100 text-red-600'
                                 }`}
                         >
                             <AlertCircle size={18} />
@@ -118,6 +118,7 @@ const Login = () => {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="seu@email.com"
                                     className={inputClass}
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>
@@ -136,6 +137,7 @@ const Login = () => {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className={`${inputClass} pr-10`}
+                                    autoComplete="current-password"
                                 />
                                 <button
                                     type="button"

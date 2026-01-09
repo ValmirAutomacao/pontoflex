@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset para silenciar alertas de console sobre propriedades obsoletas ou mal formatadas pelo build */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* ========================================
    PALETA DE CORES PONTOFLEX - PROFISSIONAL
    - Cores corporativas e sérias
@@ -87,8 +98,6 @@ body {
   padding: 0;
   min-height: 100vh;
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;

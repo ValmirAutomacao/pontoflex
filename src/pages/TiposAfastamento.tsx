@@ -30,12 +30,19 @@ const TiposAfastamento = () => {
     });
 
     useEffect(() => {
-        fetchTipos();
-    }, []);
+        if (profile?.empresa_id) {
+            fetchTipos();
+        }
+    }, [profile?.empresa_id]);
 
     const fetchTipos = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
-        const { data } = await supabase.from('tipos_afastamentos').select('*').order('nome');
+        const { data } = await supabase
+            .from('tipos_afastamentos')
+            .select('*')
+            .eq('empresa_id', profile.empresa_id)
+            .order('nome');
         if (data) setTipos(data);
         setLoading(false);
     };

@@ -52,8 +52,10 @@ const Jornadas = () => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchJornadas();
-    }, []);
+        if (profile?.empresa_id) {
+            fetchJornadas();
+        }
+    }, [profile?.empresa_id]);
 
     useEffect(() => {
         const daily = calculateCargaMinutes(formData.pe, formData.ps, formData.se, formData.ss);
@@ -72,8 +74,13 @@ const Jornadas = () => {
     }, [formData.pe, formData.ps, formData.se, formData.ss]);
 
     const fetchJornadas = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
-        const { data } = await supabase.from('jornadas_trabalho').select('*').order('created_at', { ascending: false });
+        const { data } = await supabase
+            .from('jornadas_trabalho')
+            .select('*')
+            .eq('empresa_id', profile.empresa_id)
+            .order('created_at', { ascending: false });
         if (data) setJornadas(data);
         setLoading(false);
     };

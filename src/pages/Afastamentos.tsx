@@ -56,11 +56,22 @@ const Afastamentos = () => {
     }, [profile?.empresa_id]);
 
     const fetchData = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
         const [afRes, funcRes, tiposRes] = await Promise.all([
-            supabase.from('afastamentos').select('*, funcionarios(nome), tipos_afastamentos(nome, cor)').order('data_inicio', { ascending: false }),
-            supabase.from('funcionarios').select('id, nome').eq('status', 'Ativo').order('nome'),
-            supabase.from('tipos_afastamentos').select('id, nome, cor').order('nome')
+            supabase.from('afastamentos')
+                .select('*, funcionarios(nome), tipos_afastamentos(nome, cor)')
+                .eq('empresa_id', profile.empresa_id)
+                .order('data_inicio', { ascending: false }),
+            supabase.from('funcionarios')
+                .select('id, nome')
+                .eq('empresa_id', profile.empresa_id)
+                .eq('status', 'Ativo')
+                .order('nome'),
+            supabase.from('tipos_afastamentos')
+                .select('id, nome, cor')
+                .eq('empresa_id', profile.empresa_id)
+                .order('nome')
         ]);
 
         if (afRes.data) setAfastamentos(afRes.data);

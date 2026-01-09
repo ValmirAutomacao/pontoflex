@@ -70,8 +70,13 @@ const LocaisTrabalho = () => {
     };
 
     const fetchLocais = async () => {
+        if (!profile?.empresa_id) return;
         setLoading(true);
-        const { data } = await supabase.from('locais_trabalho').select('*').order('nome');
+        const { data } = await supabase
+            .from('locais_trabalho')
+            .select('*')
+            .eq('empresa_id', profile.empresa_id)
+            .order('nome');
         if (data) setLocais(data);
         setLoading(false);
     };

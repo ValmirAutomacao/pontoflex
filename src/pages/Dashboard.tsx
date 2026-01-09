@@ -43,11 +43,91 @@ const ActivityItem = ({ image, title, author, status, time, statusColor }: any) 
 }
 
 const Dashboard = () => {
+    const { profile } = useAuth();
     const { isDark } = useTheme();
+    const [stats, setStats] = useState({
+        funcionarios: 0,
+        registrosHoje: 0,
+        ajustesPendentes: 0,
+        conformidade: 98
+    });
+    const [recentActivities, setRecentActivities] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (profile?.empresa_id) {
+            fetchStats();
+            fetchRecentActivities();
+        }
+    }, [profile]);
+
+    const fetchStats = async () => {
+        try {
+            // Contagem de funcionários
+            const { count: funcCount } = await supabase
+                .from('funcionarios')
+                .select('*', { count: 'exact', head: true })
+                .eq('empresa_id', profile?.empresa_id)
+                .eq('status', 'Ativo');
+
+            // Registros hoje
+            const today = new Date().toISOString().split('T')[0];
+            const { count: pontoCount } = await supabase
+                .from('registros_ponto')
+                .select('*', { count: 'exact', head: true })
+                .eq('empresa_id', profile?.empresa_id)
+                .gte('data_registro', today);
+
+            // Ajustes pendentes
+            const { count: ajustesCount } = await supabase
+                .from('ajustes_ponto')
+                .select('*', { count: 'exact', head: true })
+                .eq('empresa_id', profile?.empresa_id)
+                .eq('status', 'pendente');
+
+            setStats({
+                funcionarios: funcCount || 0,
+                registrosHoje: pontoCount || 0,
+                ajustesPendentes: ajustesCount || 0,
+                conformidade: 98 // Cálculo futuro baseado em inconsistências
+            });
+        } catch (error) {
+            console.error('Erro ao buscar estatísticas:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchRecentActivities = async () => {
+        const { data } = await supabase
+            .from('registros_ponto')
+            .select(`
+                id,
+                tipo,
+                data_registro,
+                hora_registro,
+                funcionarios (nome, foto_url)
+            `)
+            .eq('empresa_id', profile?.empresa_id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (data) {
+            setRecentActivities(data.map(reg => ({
+                id: reg.id,
+                image: (reg.funcionarios as any)?.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(reg.funcionarios as any)?.nome}`,
+                title: `Registro de ${reg.tipo === 'E' ? 'Entrada' : reg.tipo === 'S' ? 'Saída' : reg.tipo}`,
+                author: (reg.funcionarios as any)?.nome,
+                status: 'Sincronizado',
+                time: new Date(reg.data_registro + 'T' + reg.hora_registro).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                statusColor: 'green'
+            })));
+        }
+    };
 
     const cardClass = `rounded-2xl p-6 border transition-all ${isDark
-            ? 'bg-slate-800/50 border-slate-700/50'
-            : 'bg-white border-slate-200 shadow-soft'
+        ? 'bg-slate-800/50 border-slate-700/50'
+        : 'bg-white border-slate-200 shadow-soft'
         }`;
 
     return (
@@ -61,25 +141,6 @@ const Dashboard = () => {
                     <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         Visão geral do sistema de ponto
                     </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={16} />
-                        <input
-                            type="text"
-                            placeholder="Buscar..."
-                            className={`border rounded-lg py-2 pl-10 pr-4 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 ${isDark
-                                    ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500'
-                                    : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                                }`}
-                        />
-                    </div>
-                    <button className={`relative p-2.5 border rounded-lg transition-all hover:border-primary-500 ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
-                        }`}>
-                        <Bell size={18} />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-                    </button>
                 </div>
             </div>
 
@@ -95,12 +156,9 @@ const Dashboard = () => {
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-primary-500/10 text-primary-400' : 'bg-primary-50 text-primary-600'}`}>
                             <Users size={20} />
                         </div>
-                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${isDark ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-600'}`}>
-                            <ArrowUpRight size={10} /> +4%
-                        </div>
                     </div>
                     <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Funcionários Ativos</p>
-                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>124</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.funcionarios}</p>
                 </motion.div>
 
                 <motion.div
@@ -115,7 +173,7 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Registros Hoje</p>
-                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>312</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.registrosHoje}</p>
                 </motion.div>
 
                 <motion.div
@@ -128,12 +186,14 @@ const Dashboard = () => {
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
                             <Clock size={20} />
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
-                            Pendente
-                        </span>
+                        {stats.ajustesPendentes > 0 && (
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                                Pendente
+                            </span>
+                        )}
                     </div>
                     <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajustes Pendentes</p>
-                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>8</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.ajustesPendentes}</p>
                 </motion.div>
 
                 <motion.div
@@ -149,10 +209,10 @@ const Dashboard = () => {
                     </div>
                     <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Conformidade</p>
                     <div className="flex items-end gap-2">
-                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>98%</p>
+                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.conformidade}%</p>
                     </div>
                     <div className={`w-full h-1.5 rounded-full mt-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                        <div className="h-full w-[98%] bg-primary-500 rounded-full" />
+                        <div className="h-full bg-primary-500 rounded-full" style={{ width: `${stats.conformidade}%` }} />
                     </div>
                 </motion.div>
             </div>
@@ -200,27 +260,22 @@ const Dashboard = () => {
                 >
                     <h2 className={`text-lg font-semibold mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Atividades Recentes</h2>
                     <div className="space-y-5">
-                        <ActivityItem
-                            image="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
-                            title="Registro validado"
-                            status="Aprovado"
-                            time="12 min"
-                            statusColor="green"
-                        />
-                        <ActivityItem
-                            image="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos"
-                            title="Ajuste solicitado"
-                            status="Pendente"
-                            time="45 min"
-                            statusColor="orange"
-                        />
-                        <ActivityItem
-                            image="https://api.dicebear.com/7.x/avataaars/svg?seed=Ana"
-                            title="Biometria cadastrada"
-                            status="Concluído"
-                            time="2h"
-                            statusColor="blue"
-                        />
+                        {recentActivities.length > 0 ? (
+                            recentActivities.map((activity) => (
+                                <ActivityItem
+                                    key={activity.id}
+                                    image={activity.image}
+                                    title={activity.title}
+                                    status={activity.status}
+                                    time={activity.time}
+                                    statusColor={activity.statusColor}
+                                />
+                            ))
+                        ) : (
+                            <p className={`text-xs text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                Nenhuma atividade recente
+                            </p>
+                        )}
                     </div>
                 </motion.div>
             </div>
