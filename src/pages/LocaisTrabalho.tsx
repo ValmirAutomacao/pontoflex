@@ -5,7 +5,8 @@ import { supabase } from '../services/supabaseClient';
 import DataTable from '../components/DataTable';
 import { MapPin, Edit2, Trash2, Navigation, X, Save, Search as SearchIcon, Check, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { searchAddress, GeocodeResult } from '../services/geocodingService';
+import { searchAddress, reverseGeocode, GeocodeResult } from '../services/geocodingService';
+import { searchByCep } from '../services/cepService';
 import type { Funcionario } from '../types';
 import { maskCEP, unmask } from '../utils/masks';
 import MiniMap from '../components/MiniMap';
@@ -48,6 +49,7 @@ const LocaisTrabalho = () => {
     const [addressQuery, setAddressQuery] = useState('');
     const [addressResults, setAddressResults] = useState<GeocodeResult[]>([]);
     const [searchingAddress, setSearchingAddress] = useState(false);
+    const [searchingCep, setSearchingCep] = useState(false);
 
     // Employees
     const [allFuncionarios, setAllFuncionarios] = useState<Funcionario[]>([]);
@@ -153,15 +155,36 @@ const LocaisTrabalho = () => {
         setAddressQuery(res.display_name);
     };
 
-    const handleGetCurrentLocation = () => {
+    const handleGetCurrentLocation = async () => {
         setGettingLocation(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setFormData({
-                    ...formData,
-                    latitude: position.coords.latitude.toString(),
-                    longitude: position.coords.longitude.toString()
-                });
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Atualiza coordenadas imediatamente
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: lat.toString(),
+                    longitude: lng.toString()
+                }));
+
+                // Fazer reverse geocoding para preencher endereço
+                const result = await reverseGeocode(lat, lng);
+                if (result) {
+                    setFormData(prev => ({
+                        ...prev,
+                        latitude: lat.toString(),
+                        longitude: lng.toString(),
+                        cep: result.address.postcode || prev.cep,
+                        logradouro: result.address.road || prev.logradouro,
+                        bairro: result.address.suburb || prev.bairro,
+                        cidade: result.address.city || prev.cidade,
+                        estado: result.address.state || prev.estado
+                        // Número e complemento ficam vazios para preenchimento manual
+                    }));
+                    setAddressQuery(result.display_name);
+                }
                 setGettingLocation(false);
             },
             (error) => {
@@ -170,6 +193,31 @@ const LocaisTrabalho = () => {
             },
             { enableHighAccuracy: true }
         );
+    };
+
+    const handleCepSearch = async () => {
+        const cleanCep = unmask(formData.cep);
+        if (cleanCep.length !== 8) {
+            alert('CEP inválido. Digite um CEP com 8 dígitos.');
+            return;
+        }
+
+        setSearchingCep(true);
+        const result = await searchByCep(cleanCep);
+
+        if (result) {
+            setFormData(prev => ({
+                ...prev,
+                logradouro: result.logradouro || prev.logradouro,
+                bairro: result.bairro || prev.bairro,
+                cidade: result.localidade || prev.cidade,
+                estado: result.uf || prev.estado
+                // Número e complemento ficam vazios para preenchimento manual
+            }));
+        } else {
+            alert('CEP não encontrado.');
+        }
+        setSearchingCep(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -426,7 +474,27 @@ const LocaisTrabalho = () => {
                                         </div>
                                         <div>
                                             <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>CEP</label>
-                                            <input className={inputClass} value={formData.cep} onChange={e => setFormData({ ...formData, cep: maskCEP(e.target.value) })} />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    className={`${inputClass} flex-1`}
+                                                    value={formData.cep}
+                                                    onChange={e => setFormData({ ...formData, cep: maskCEP(e.target.value) })}
+                                                    placeholder="00000-000"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCepSearch}
+                                                    disabled={searchingCep || formData.cep.length < 9}
+                                                    className={`px-3 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors
+                                                        ${isDark
+                                                            ? 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 disabled:opacity-50'
+                                                            : 'bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50'
+                                                        }`}
+                                                >
+                                                    <SearchIcon size={12} />
+                                                    {searchingCep ? '...' : 'Buscar'}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="col-span-2">
                                             <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Logradouro</label>
