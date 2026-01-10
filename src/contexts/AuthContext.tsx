@@ -77,51 +77,88 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session }, error }) => {
-            if (error) {
-                console.warn('Erro ao obter sessão inicial:', error.message);
-                if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid_grant')) {
-                    // Limpar completamente o localStorage para forçar novo login
-                    console.warn('Token inválido detectado. Limpando dados de sessão...');
-                    localStorage.removeItem('sb-otgfbjjfpgpywiyppjtd-auth-token');
-                    supabase.auth.signOut();
-                }
-                setLoading(false);
-                return;
-            }
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user);
-            } else {
-                setLoading(false);
-            }
-        }).catch(() => setLoading(false));
+        let refreshInterval: NodeJS.Timeout;
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
-                    setSession(null);
-                    setUser(null);
-                    setProfile(null);
+        // Função para recuperar e validar sessão
+        const initializeSession = async () => {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    console.warn('Erro ao obter sessão inicial:', error.message);
+                    if (error.message.includes('Refresh Token Not Found') || error.message.includes('invalid_grant')) {
+                        console.warn('Token inválido detectado. Limpando dados de sessão...');
+                        localStorage.removeItem('sb-otgfbjjfpgpywiyppjtd-auth-token');
+                        await supabase.auth.signOut();
+                    }
                     setLoading(false);
                     return;
                 }
 
-                setSession(session);
-                setUser(session?.user ?? null);
-                if (session?.user) {
+                if (session) {
+                    setSession(session);
+                    setUser(session.user);
                     await fetchProfile(session.user);
+
+                    // Configurar renovação automática de sessão (a cada 10 minutos)
+                    refreshInterval = setInterval(async () => {
+                        console.log('[AuthContext] Renovando sessão automaticamente...');
+                        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+                        if (refreshError) {
+                            console.warn('[AuthContext] Erro ao renovar sessão:', refreshError.message);
+                        } else if (newSession) {
+                            setSession(newSession);
+                            setUser(newSession.user);
+                            console.log('[AuthContext] Sessão renovada com sucesso');
+                        }
+                    }, 10 * 60 * 1000); // 10 minutos
                 } else {
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error('[AuthContext] Erro crítico na inicialização:', err);
+                setLoading(false);
+            }
+        };
+
+        initializeSession();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log('[AuthContext] Auth event:', event);
+
+                if (event === 'SIGNED_OUT') {
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
+                    setLoading(false);
+                    if (refreshInterval) clearInterval(refreshInterval);
+                    return;
+                }
+
+                if (event === 'TOKEN_REFRESHED' && session) {
+                    console.log('[AuthContext] Token renovado via evento');
+                    setSession(session);
+                    setUser(session.user);
+                    return;
+                }
+
+                if (session?.user) {
+                    setSession(session);
+                    setUser(session.user);
+                    await fetchProfile(session.user);
+                } else if (event !== 'TOKEN_REFRESHED') {
                     setProfile(null);
                     setLoading(false);
                 }
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+            if (refreshInterval) clearInterval(refreshInterval);
+        };
     }, []);
 
     const fetchProfile = async (user: User) => {
