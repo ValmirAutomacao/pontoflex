@@ -39,7 +39,18 @@ const LocaisTrabalho = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLocal, setEditingLocal] = useState<LocalTrabalho | null>(null);
     const [formData, setFormData] = useState({
-        latitude: '', longitude: '', raio_metros: 50, ativo: true,
+        nome: '',
+        cep: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        latitude: '',
+        longitude: '',
+        raio_metros: 50,
+        ativo: true,
         regra_horas_id: ''
     });
     const [saving, setSaving] = useState(false);

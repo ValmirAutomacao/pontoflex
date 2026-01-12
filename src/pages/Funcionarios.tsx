@@ -134,7 +134,7 @@ const Funcionarios = () => {
             nome: '', email: '', cpf: '', ctps: '', telefone: '', whatsapp: '', pis_nis: '',
             data_admissao: '', cep: '', logradouro: '', numero: '', complemento: '',
             bairro: '', cidade: '', estado: '',
-            setor_id: '', funcao_id: '', jornada_id: '', local_trabalho_id: '',
+            setor_id: '', funcao_id: '', local_trabalho_id: '',
             regra_horas_id: '',
             escala_id: '',
             data_inicio_escala: '',

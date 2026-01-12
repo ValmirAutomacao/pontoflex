@@ -287,8 +287,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     pis_nis: funcionario.pis_nis,
                     biometria_ativa: biometriaAtiva,
                     permissoes: (funcao?.permissoes as string[]) || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
-                    empresa_bloqueada: funcionario.empresas?.status !== 'ativo' || funcionario.empresas?.bloqueado_por_atraso,
-                    empresa: funcionario.empresas
+                    empresa_bloqueada: (funcionario.empresas as any)?.status !== 'ativo' || (funcionario.empresas as any)?.bloqueado_por_atraso,
+                    empresa: Array.isArray(funcionario.empresas) ? funcionario.empresas[0] : funcionario.empresas
                 };
                 setProfile(userProfile);
             }

@@ -376,6 +376,33 @@ const Escalas = () => {
         // O restante da lógica agora é gerenciado pelo Wizard Step 4
     };
 
+    const handleBulkAssign = async () => {
+        if (!selectedEscalaId || selectedEmployees.length === 0 || !profile?.empresa_id) return;
+        setSaving(true);
+        try {
+            const dataInicio = new Date().toISOString().split('T')[0];
+            const linksToInsert = selectedEmployees.map(empId => ({
+                funcionario_id: empId,
+                escala_id: selectedEscalaId,
+                empresa_id: profile.empresa_id,
+                data_inicio: dataInicio,
+                ativo: true
+            }));
+
+            const { error } = await supabase.from('funcionarios_escalas').insert(linksToInsert);
+            if (error) throw error;
+
+            setIsAssignModalOpen(false);
+            setSelectedEmployees([]);
+            fetchEscalas();
+        } catch (error: any) {
+            console.error('Erro no vínculo em massa:', error);
+            alert('Erro ao vincular colaboradores: ' + error.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleOpenExceptions = async (escala: EscalaServico) => {
         setSelectedEscalaName(escala.nome);
         setSelectedEscalaId(escala.id);

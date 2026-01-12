@@ -30,7 +30,7 @@ export const useNative = () => {
         updateStatusBar();
 
         // Handle Back Button
-        const backListener = App.addListener('backButton', ({ canGoBack }) => {
+        const backListener = App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
             if (location.pathname === '/' || !canGoBack) {
                 App.exitApp();
             } else {
@@ -39,7 +39,7 @@ export const useNative = () => {
         });
 
         return () => {
-            backListener.then(l => l.remove());
+            backListener.then((l: any) => l.remove());
         };
     }, [isDark, location, navigate]);
 };
