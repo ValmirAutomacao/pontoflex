@@ -3,12 +3,17 @@ import { supabase } from '../services/supabaseClient';
 import { User, Session } from '@supabase/supabase-js';
 import type { Funcionario } from '../types';
 
+const isValidUUID = (uuid: string | undefined | null): boolean => {
+    if (!uuid) return false;
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+};
+
 type UserRole = 'developer' | 'superadmin' | 'admin' | 'manager' | 'employee';
 const ADMIN_DEFAULT_PERMISSIONS = [
     'modulo_dashboard',
     'modulo_setores',
     'modulo_funcoes',
-    'modulo_jornadas',
     'modulo_colaboradores',
     'modulo_biometria',
     'modulo_registro_ponto',
@@ -28,6 +33,8 @@ interface UserProfile {
     pis_nis?: string;
     empresa_id?: string;
     funcionario_id?: string;
+    escala_id?: string;
+    escalas?: any[]; // Todas as escalas ativas do colaborador
     funcao?: string;
     setor?: string;
     foto_url?: string;
@@ -162,6 +169,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     const fetchProfile = async (user: User) => {
+        if (!user?.id || !isValidUUID(user.id)) {
+            console.error('[AuthContext] Invalid user ID for fetchProfile:', user?.id);
+            setLoading(false);
+            return;
+        }
+
         const isDev = user.email === DEVELOPER_EMAIL;
         console.log('[AuthContext] Fetching profile for user:', user.id, user.email);
 
@@ -179,6 +192,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     empresa_id,
                     funcoes:funcao_id (nome, nivel, permissoes),
                     setores:setor_id (nome),
+                    funcionarios_escalas!funcionarios_escalas_funcionario_id_fkey (
+                        escala:escala_id (
+                            *,
+                            escalas_horarios (*)
+                        ),
+                        data_inicio,
+                        data_fim,
+                        ativo
+                    ),
                     funcionarios_biometria!funcionarios_biometria_funcionario_id_fkey (status),
                     empresas!funcionarios_empresa_id_fkey (status, bloqueado_por_atraso, razao_social, cnpj, endereco)
                 `)
@@ -218,8 +240,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }
 
                 // Verificar se tem biometria ativa
-                const biometriaData = funcionario.funcionarios_biometria as any[];
-                const biometriaAtiva = biometriaData?.some(b => b.status === 'Ativo');
+                const biometriaData = funcionario.funcionarios_biometria;
+                const biometriaAtiva = Array.isArray(biometriaData)
+                    ? biometriaData.some((b: any) => b.status === 'Ativo')
+                    : (biometriaData as any)?.status === 'Ativo';
+
+                // Determinar a escala ativa para hoje
+                const hoje = new Date();
+                const diaSemana = hoje.getDay(); // 0=Dom, 1=Seg...
+                const dataIso = hoje.toISOString().split('T')[0];
+
+                const todasAsEscalas = (funcionario.funcionarios_escalas as any[]) || [];
+                const escalasAtivas = todasAsEscalas.filter(f =>
+                    f.ativo &&
+                    f.data_inicio <= dataIso &&
+                    (!f.data_fim || f.data_fim >= dataIso)
+                );
+
+                // Tentar encontrar a escala que tem horário para hoje
+                let escalaIdFinal = undefined;
+                let escalaEncontrada = escalasAtivas.find(f => {
+                    const horarios = f.escala?.escalas_horarios || [];
+                    return horarios.some((h: any) => h.dia_semana === diaSemana && !h.is_folga);
+                });
+
+                // Se não achou escala com horário hoje, pega a primeira ativa
+                if (escalaEncontrada) {
+                    escalaIdFinal = escalaEncontrada.escala?.id;
+                } else if (escalasAtivas.length > 0) {
+                    escalaIdFinal = escalasAtivas[0].escala?.id;
+                }
 
                 const userProfile: UserProfile = {
                     id: user.id,
@@ -228,19 +278,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     nome: funcionario.nome,
                     empresa_id: funcionario.empresa_id,
                     funcionario_id: funcionario.id,
+                    escala_id: escalaIdFinal,
+                    escalas: escalasAtivas.map(f => f.escala),
                     funcao: funcao?.nome,
                     setor: (funcionario.setores as any)?.nome,
                     foto_url: funcionario.foto_url,
                     cpf: funcionario.cpf,
                     pis_nis: funcionario.pis_nis,
                     biometria_ativa: biometriaAtiva,
-                    empresa_bloqueada: (funcionario.empresas as any)?.bloqueado_por_atraso || (funcionario.empresas as any)?.status === 'bloqueado',
-                    permissoes: (funcionario.funcoes as any)?.permissoes || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
-                    empresa: {
-                        razao_social: (funcionario.empresas as any)?.razao_social,
-                        cnpj: (funcionario.empresas as any)?.cnpj,
-                        endereco: (funcionario.empresas as any)?.endereco?.raw || (funcionario.empresas as any)?.endereco
-                    }
+                    permissoes: (funcao?.permissoes as string[]) || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
+                    empresa_bloqueada: funcionario.empresas?.status !== 'ativo' || funcionario.empresas?.bloqueado_por_atraso,
+                    empresa: funcionario.empresas
                 };
                 setProfile(userProfile);
             }

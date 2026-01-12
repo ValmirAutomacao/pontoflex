@@ -25,6 +25,7 @@ interface LocalTrabalho {
     bairro?: string;
     cidade?: string;
     estado?: string;
+    regra_horas_id?: string;
     ativo: boolean;
     created_at: string;
 }
@@ -38,9 +39,8 @@ const LocaisTrabalho = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLocal, setEditingLocal] = useState<LocalTrabalho | null>(null);
     const [formData, setFormData] = useState({
-        nome: '', cep: '', logradouro: '', numero: '', complemento: '',
-        bairro: '', cidade: '', estado: '',
-        latitude: '', longitude: '', raio_metros: 50, ativo: true
+        latitude: '', longitude: '', raio_metros: 50, ativo: true,
+        regra_horas_id: ''
     });
     const [saving, setSaving] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false);
@@ -55,11 +55,24 @@ const LocaisTrabalho = () => {
     const [allFuncionarios, setAllFuncionarios] = useState<Funcionario[]>([]);
     const [selectedFuncIds, setSelectedFuncIds] = useState<string[]>([]);
     const [funcSearch, setFuncSearch] = useState('');
+    const [regrasHoras, setRegrasHoras] = useState<any[]>([]);
 
     useEffect(() => {
         fetchLocais();
         fetchFuncionarios();
+        fetchRegras();
     }, []);
+
+    const fetchRegras = async () => {
+        if (!profile?.empresa_id) return;
+        const { data } = await supabase
+            .from('regra_horas_config')
+            .select('id, apelido, is_default')
+            .eq('empresa_id', profile.empresa_id)
+            .eq('ativo', true)
+            .order('is_default', { ascending: false });
+        if (data) setRegrasHoras(data);
+    };
 
     const fetchFuncionarios = async () => {
         if (!profile?.empresa_id) return;
@@ -101,7 +114,8 @@ const LocaisTrabalho = () => {
         setFormData({
             nome: '', cep: '', logradouro: '', numero: '', complemento: '',
             bairro: '', cidade: '', estado: '',
-            latitude: '', longitude: '', raio_metros: 50, ativo: true
+            latitude: '', longitude: '', raio_metros: 50, ativo: true,
+            regra_horas_id: ''
         });
         setSelectedFuncIds([]);
         setAddressQuery('');
@@ -123,7 +137,8 @@ const LocaisTrabalho = () => {
             latitude: local.latitude.toString(),
             longitude: local.longitude.toString(),
             raio_metros: local.raio_metros,
-            ativo: local.ativo
+            ativo: local.ativo,
+            regra_horas_id: local.regra_horas_id || ''
         });
         setAddressQuery('');
         setAddressResults([]);
@@ -239,6 +254,7 @@ const LocaisTrabalho = () => {
                 longitude: parseFloat(formData.longitude),
                 raio_metros: formData.raio_metros,
                 ativo: formData.ativo,
+                regra_horas_id: formData.regra_horas_id || null,
                 empresa_id: profile.empresa_id
             };
 
@@ -466,6 +482,13 @@ const LocaisTrabalho = () => {
                                     <div>
                                         <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Raio de Tolerância (metros)</label>
                                         <input required type="number" className={inputClass} value={formData.raio_metros} onChange={e => setFormData({ ...formData, raio_metros: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Regra de Horas / Banco (Opcional)</label>
+                                        <select className={inputClass} value={formData.regra_horas_id} onChange={e => setFormData({ ...formData, regra_horas_id: e.target.value })}>
+                                            <option value="">Seguir Padrão da Empresa</option>
+                                            {regrasHoras.map(r => <option key={r.id} value={r.id}>{r.apelido} {r.is_default ? '(Padrão)' : ''}</option>)}
+                                        </select>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">

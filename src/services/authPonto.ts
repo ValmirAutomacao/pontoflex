@@ -2,6 +2,12 @@ import { supabase } from './supabaseClient';
 import { Network } from '@capacitor/network';
 import { offlineSyncService, PendingRegistration } from './offlineSyncService';
 
+const isValidUUID = (uuid: string | undefined | null): boolean => {
+    if (!uuid) return false;
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+};
+
 /**
  * Verifica a senha de ponto do funcionário
  */
@@ -10,6 +16,10 @@ export const verificarSenhaPonto = async (
     senha: string
 ): Promise<{ valid: boolean; error?: string }> => {
     // Buscar o user_id do funcionário
+    if (!isValidUUID(funcionarioId)) {
+        return { valid: false, error: 'ID do funcionário inválido' };
+    }
+
     const { data: funcionario, error: funcError } = await supabase
         .from('funcionarios')
         .select('user_id')
@@ -214,6 +224,10 @@ export const buscarRegistrosDia = async (
     funcionarioId: string,
     data?: string
 ): Promise<{ registros: any[]; error?: string }> => {
+    if (!isValidUUID(funcionarioId)) {
+        return { registros: [] };
+    }
+
     const dataConsulta = data || new Date().toISOString().split('T')[0];
 
     const { data: registros, error } = await supabase
@@ -272,7 +286,7 @@ export const buscarRegistrosPeriodo = async (params: {
                 email,
                 funcoes:funcao_id (nome),
                 setores:setor_id (nome),
-                jornada:jornada_id (*)
+                escala:escala_id (*)
             )
         `)
         .eq('empresa_id', params.empresaId)
@@ -334,4 +348,53 @@ export const ajustarPonto = async (params: {
     }
 
     return { success: true };
+};
+
+/**
+ * Busca o saldo do banco de horas de um funcionário
+ */
+export const buscarSaldoBancoHoras = async (
+    funcionarioId: string
+): Promise<{ saldo: any | null; error?: string }> => {
+    if (!isValidUUID(funcionarioId)) {
+        return { saldo: null };
+    }
+
+    const { data, error } = await supabase
+        .from('banco_horas_saldo')
+        .select('*, funcionarios(regra_horas_id, locais_trabalho(regra_horas_id))')
+        .eq('funcionario_id', funcionarioId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao buscar saldo:', error);
+        return { saldo: null, error: error.message };
+    }
+
+    // Buscar o nome da regra real (resolvendo hierarquia simples aqui no front para exibição)
+    let regraNome = 'Padrão da Empresa';
+    if (data?.funcionarios) {
+        const f = data.funcionarios as any;
+        const regraId = f.regra_horas_id || f.locais_trabalho?.regra_horas_id;
+
+        if (regraId) {
+            const { data: regraData } = await supabase
+                .from('regra_horas_config')
+                .select('apelido')
+                .eq('id', regraId)
+                .single();
+            if (regraData) regraNome = regraData.apelido;
+        } else {
+            // Buscar nome da regra padrão da empresa
+            const { data: defaultRegra } = await supabase
+                .from('regra_horas_config')
+                .select('apelido')
+                .eq('is_default', true)
+                .limit(1)
+                .single();
+            if (defaultRegra) regraNome = defaultRegra.apelido + ' (Padrão)';
+        }
+    }
+
+    return { saldo: data ? { ...data, regra_nome: regraNome } : null };
 };

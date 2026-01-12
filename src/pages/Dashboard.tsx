@@ -6,7 +6,9 @@ import {
     Bell,
     ArrowUpRight,
     Calendar,
-    CheckCircle2
+    CheckCircle2,
+    Wallet,
+    Percent
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
@@ -52,7 +54,10 @@ const Dashboard = () => {
         funcionarios: 0,
         registrosHoje: 0,
         ajustesPendentes: 0,
-        conformidade: 98
+        conformidade: 98,
+        saldoBancoGeral: 0,
+        extrasMes: 0,
+        onlineAgora: 0
     });
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,11 +93,38 @@ const Dashboard = () => {
                 .eq('empresa_id', profile?.empresa_id)
                 .eq('status', 'pendente');
 
+            // Saldo Banco Geral
+            const { data: saldoData } = await supabase
+                .from('banco_horas_saldo')
+                .select('saldo_minutos');
+
+            const totalSaldo = saldoData?.reduce((acc, curr) => acc + (curr.saldo_minutos || 0), 0) || 0;
+
+            // Extras a Pagar (Mês Atual)
+            const firstDayMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+            const { data: extraData } = await supabase
+                .from('horas_extras_pagamento')
+                .select('minutos_50, minutos_100, minutos_noturnos')
+                .eq('empresa_id', profile?.empresa_id)
+                .gte('data_referencia', firstDayMonth);
+
+            const totalExtras = extraData?.reduce((acc, curr) => acc + (curr.minutos_50 || 0) + (curr.minutos_100 || 0) + (curr.minutos_noturnos || 0), 0) || 0;
+
+            // Online Agora
+            const { count: onlineCount } = await supabase
+                .from('view_status_colaboradores')
+                .select('*', { count: 'exact', head: true })
+                .eq('empresa_id', profile?.empresa_id)
+                .eq('status_atual', 'TRABALHANDO');
+
             setStats({
                 funcionarios: funcCount || 0,
                 registrosHoje: pontoCount || 0,
                 ajustesPendentes: ajustesCount || 0,
-                conformidade: 98 // Cálculo futuro baseado em inconsistências
+                conformidade: 98,
+                saldoBancoGeral: totalSaldo,
+                extrasMes: totalExtras,
+                onlineAgora: onlineCount || 0
             });
         } catch (error) {
             console.error('Erro ao buscar estatísticas:', error);
@@ -106,7 +138,7 @@ const Dashboard = () => {
             .from('registros_ponto')
             .select(`
                 id,
-                tipo,
+                tipo_registro,
                 data_registro,
                 hora_registro,
                 funcionarios (nome, foto_url)
@@ -119,7 +151,7 @@ const Dashboard = () => {
             setRecentActivities(data.map((reg: any) => ({
                 id: reg.id,
                 image: (reg.funcionarios as any)?.foto_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(reg.funcionarios as any)?.nome}`,
-                title: `Registro de ${reg.tipo === 'E' ? 'Entrada' : reg.tipo === 'S' ? 'Saída' : reg.tipo}`,
+                title: `Registro de ${reg.tipo_registro === 'E' ? 'Entrada' : reg.tipo_registro === 'S' ? 'Saída' : reg.tipo_registro}`,
                 author: (reg.funcionarios as any)?.nome,
                 status: 'Sincronizado',
                 time: new Date(reg.data_registro + 'T' + reg.hora_registro).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -216,6 +248,63 @@ const Dashboard = () => {
                     </div>
                     <div className={`w-full h-1.5 rounded-full mt-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
                         <div className="h-full bg-primary-500 rounded-full" style={{ width: `${stats.conformidade}%` }} />
+                    </div>
+                </motion.div>
+
+                {/* Novos Cards de RH */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className={cardClass}
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                            <Wallet size={20} />
+                        </div>
+                    </div>
+                    <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Banco (Geral)</p>
+                    <p className={`text-2xl font-bold ${stats.saldoBancoGeral >= 0 ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-rose-400' : 'text-rose-600')}`}>
+                        {Math.floor(Math.abs(stats.saldoBancoGeral) / 60)}h {Math.abs(stats.saldoBancoGeral) % 60}m
+                        <span className="text-xs ml-1 opacity-60">{stats.saldoBancoGeral < 0 ? 'Déficit' : 'Crédito'}</span>
+                    </p>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className={cardClass}
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-50 text-orange-600'}`}>
+                            <Percent size={20} />
+                        </div>
+                    </div>
+                    <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Extras/Adicionais (Mês)</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.floor(stats.extrasMes / 60)}h {stats.extrasMes % 60}m</p>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className={`cursor-pointer group relative overflow-hidden ${cardClass}`}
+                    onClick={() => window.location.href = '/status-live'}
+                >
+                    <div className={`absolute top-0 right-0 w-20 h-20 -mr-10 -mt-10 bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-all`} />
+                    <div className="flex justify-between items-start mb-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-500'}`}>
+                            <Activity size={20} className="animate-pulse" />
+                        </div>
+                    </div>
+                    <p className={`text-sm font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Presença Agora</p>
+                    <div className="flex items-center gap-2">
+                        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.onlineAgora} online</p>
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
                     </div>
                 </motion.div>
             </div>

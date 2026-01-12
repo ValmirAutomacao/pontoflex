@@ -38,6 +38,9 @@ interface Funcionario {
     biometria_status?: string;
     setup_token?: string;
     whatsapp?: string;
+    regra_horas_id?: string;
+    escala_id?: string;
+    data_inicio_escala?: string;
 }
 
 const Funcionarios = () => {
@@ -48,13 +51,18 @@ const Funcionarios = () => {
     const [funcoes, setFuncoes] = useState<any[]>([]);
     const [jornadas, setJornadas] = useState<any[]>([]);
     const [locaisTrabalho, setLocaisTrabalho] = useState<any[]>([]);
+    const [regrasHoras, setRegrasHoras] = useState<any[]>([]);
+    const [escalas, setEscalas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingFuncionario, setEditingFuncionario] = useState<Funcionario | null>(null);
     const [formData, setFormData] = useState({
         nome: '', email: '', cpf: '', ctps: '', telefone: '', whatsapp: '', pis_nis: '',
         data_admissao: '', cep: '', logradouro: '', numero: '', complemento: '',
         bairro: '', cidade: '', estado: '',
-        setor_id: '', funcao_id: '', jornada_id: '', local_trabalho_id: '',
+        setor_id: '', funcao_id: '', local_trabalho_id: '',
+        regra_horas_id: '',
+        escala_id: '',
+        data_inicio_escala: '',
         is_externo: false, status: 'Ativo', foto_url: ''
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,15 +82,16 @@ const Funcionarios = () => {
     const fetchData = async () => {
         if (!profile?.empresa_id) return;
         setLoading(true);
-        const [funcRes, setRes, funRes, jorRes, locRes] = await Promise.all([
+        const [funcRes, setRes, funRes, locRes, regRes, escRes] = await Promise.all([
             supabase.from('funcionarios')
                 .select('*, setores:setor_id(nome), funcoes:funcao_id(nome), funcionarios_biometria!funcionarios_biometria_funcionario_id_fkey(status)')
                 .eq('empresa_id', profile.empresa_id)
                 .order('nome'),
             supabase.from('setores').select('id, nome').eq('empresa_id', profile.empresa_id),
             supabase.from('funcoes').select('id, nome').eq('empresa_id', profile.empresa_id),
-            supabase.from('jornadas_trabalho').select('id, nome').eq('empresa_id', profile.empresa_id),
-            supabase.from('locais_trabalho').select('id, nome').eq('empresa_id', profile.empresa_id).eq('ativo', true)
+            supabase.from('locais_trabalho').select('id, nome').eq('empresa_id', profile.empresa_id).eq('ativo', true),
+            supabase.from('regra_horas_config').select('id, apelido, is_default').eq('empresa_id', profile.empresa_id).eq('ativo', true),
+            supabase.from('escalas_servico').select('id, nome, tipo').eq('empresa_id', profile.empresa_id).eq('ativo', true)
         ]);
 
         if (funcRes.error) {
@@ -113,8 +122,9 @@ const Funcionarios = () => {
         }
         if (setRes.data) setSetores(setRes.data);
         if (funRes.data) setFuncoes(funRes.data);
-        if (jorRes.data) setJornadas(jorRes.data);
         if (locRes.data) setLocaisTrabalho(locRes.data);
+        if (regRes.data) setRegrasHoras(regRes.data);
+        if (escRes.data) setEscalas(escRes.data);
         setLoading(false);
     };
 
@@ -125,6 +135,9 @@ const Funcionarios = () => {
             data_admissao: '', cep: '', logradouro: '', numero: '', complemento: '',
             bairro: '', cidade: '', estado: '',
             setor_id: '', funcao_id: '', jornada_id: '', local_trabalho_id: '',
+            regra_horas_id: '',
+            escala_id: '',
+            data_inicio_escala: '',
             is_externo: false, status: 'Ativo', foto_url: ''
         });
         setIsModalOpen(true);
@@ -150,8 +163,10 @@ const Funcionarios = () => {
             estado: f.estado || '',
             setor_id: f.setor_id,
             funcao_id: f.funcao_id,
-            jornada_id: f.jornada_id,
             local_trabalho_id: f.local_trabalho_id || '',
+            regra_horas_id: f.regra_horas_id || '',
+            escala_id: f.escala_id || '',
+            data_inicio_escala: f.data_inicio_escala || '',
             is_externo: f.is_externo || false,
             status: f.status || 'Ativo',
             foto_url: f.foto_url || ''
@@ -616,16 +631,15 @@ const Funcionarios = () => {
                                             {funcoes.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Jornada</label>
-                                        <select required className={inputClass} value={formData.jornada_id} onChange={e => setFormData({ ...formData, jornada_id: e.target.value })}>
-                                            <option value="">Selecionar...</option>
-                                            {jornadas.map(j => <option key={j.id} value={j.id}>{j.nome}</option>)}
-                                        </select>
+                                    <div className="col-span-2">
+                                        <p className={`text-sm font-bold mt-4 mb-2 ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>Regras e Localização</p>
                                     </div>
                                     <div>
-                                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Data Admissão</label>
-                                        <input required type="date" className={inputClass} value={formData.data_admissao} onChange={e => setFormData({ ...formData, data_admissao: e.target.value })} />
+                                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Regra de Horas / Banco</label>
+                                        <select className={inputClass} value={formData.regra_horas_id} onChange={e => setFormData({ ...formData, regra_horas_id: e.target.value })}>
+                                            <option value="">Padrão da Empresa / Unidade</option>
+                                            {regrasHoras.map(r => <option key={r.id} value={r.id}>{r.apelido} {r.is_default ? '(Padrão)' : ''}</option>)}
+                                        </select>
                                     </div>
                                     <div>
                                         <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Local de Trabalho Principal</label>
@@ -634,7 +648,11 @@ const Funcionarios = () => {
                                             {locaisTrabalho.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex items-center gap-2 mt-2">
+                                    <div>
+                                        <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Data Admissão</label>
+                                        <input required type="date" className={inputClass} value={formData.data_admissao} onChange={e => setFormData({ ...formData, data_admissao: e.target.value })} />
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2 col-span-2">
                                         <input
                                             type="checkbox"
                                             id="is_externo"
@@ -726,10 +744,9 @@ const Funcionarios = () => {
                             </form>
                         </motion.div>
                     </div>
-                )
-                }
-            </AnimatePresence >
-        </div >
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 

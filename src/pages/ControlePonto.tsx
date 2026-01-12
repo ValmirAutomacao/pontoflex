@@ -21,7 +21,8 @@ import {
     WifiOff,
     ShieldCheck,
     MapPin,
-    ExternalLink
+    ExternalLink,
+    Calculator
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -89,6 +90,7 @@ const ControlePonto = () => {
         observacoes: ''
     });
     const [savingAjuste, setSavingAjuste] = useState(false);
+    const [recalculating, setRecalculating] = useState<string | null>(null);
 
     // Listagem filtrada
     const filteredRegistros = React.useMemo(() => {
@@ -195,6 +197,25 @@ const ControlePonto = () => {
             console.error('Erro ao salvar ajuste:', err);
         } finally {
             setSavingAjuste(false);
+        }
+    };
+
+    const handleRecalculate = async (funcionarioId: string, data: string) => {
+        setRecalculating(`${funcionarioId}-${data}`);
+        try {
+            const { data: res, error } = await supabase.functions.invoke('process-day-hours', {
+                body: { funcionario_id: funcionarioId, data_referencia: data }
+            });
+
+            if (error) throw error;
+
+            console.log('Recalculado com sucesso:', res);
+            fetchData();
+        } catch (err: any) {
+            console.error('Erro ao recalcular:', err);
+            alert('Erro ao recalcular: ' + err.message);
+        } finally {
+            setRecalculating(null);
         }
     };
 
@@ -410,16 +431,29 @@ const ControlePonto = () => {
                                             <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>{reg.total_horas || '-'}</span>
                                         </td>
                                         <td className="px-4 py-4">
-                                            {reg.saldo_minutos !== undefined ? (
-                                                <span className={`text-xs font-bold ${reg.saldo_minutos >= 0
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold ${reg.saldo_minutos !== undefined && reg.saldo_minutos >= 0
                                                     ? (isDark ? 'text-emerald-400' : 'text-emerald-600')
                                                     : (isDark ? 'text-rose-400' : 'text-rose-600')
                                                     }`}>
-                                                    {reg.saldo_minutos >= 0 ? '+' : ''}
-                                                    {Math.floor(reg.saldo_minutos / 60)}h {Math.abs(reg.saldo_minutos % 60)}m
+                                                    {reg.saldo_minutos !== undefined ? (
+                                                        <>
+                                                            {reg.saldo_minutos >= 0 ? '+' : ''}
+                                                            {Math.floor(Math.abs(reg.saldo_minutos) / 60)}h {Math.abs(reg.saldo_minutos) % 60}m
+                                                        </>
+                                                    ) : '-'}
                                                 </span>
-                                            ) : '-'}
+                                                <button
+                                                    onClick={() => handleRecalculate(reg.funcionario.id, reg.data)}
+                                                    disabled={recalculating === `${reg.funcionario.id}-${reg.data}`}
+                                                    className={`p-1 rounded-md transition-all ${isDark ? 'hover:bg-slate-700 text-slate-500' : 'hover:bg-slate-100 text-slate-400'} hover:text-primary-500`}
+                                                    title="Recalcular Banco/HE"
+                                                >
+                                                    <Calculator size={12} className={recalculating === `${reg.funcionario.id}-${reg.data}` ? 'animate-spin' : ''} />
+                                                </button>
+                                            </div>
                                         </td>
+
                                         <td className="px-4 py-4">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${reg.status === 'Completo' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') :
                                                 reg.status === 'Falta' ? (isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600') :
@@ -434,93 +468,94 @@ const ControlePonto = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div >
 
             {/* Modal Ajuste */}
             <AnimatePresence>
-                {isAdjustModalOpen && selectedRegistro && (
-                    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-6 overflow-y-auto">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50" onClick={() => setIsAdjustModalOpen(false)} />
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className={`relative w-full max-w-lg rounded-2xl border shadow-xl my-4 md:my-8 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-                        >
-                            <div className="p-6">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ajuste de Ponto</h2>
-                                        <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            {TIPO_REGISTRO_LABELS[selectedRegistro.tipo_registro as keyof typeof TIPO_REGISTRO_LABELS]} • {new Date(selectedRegistro.data_registro + 'T00:00:00').toLocaleDateString('pt-BR')}
-                                        </p>
-                                    </div>
-                                    <button onClick={() => setIsAdjustModalOpen(false)} className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
-                                        <X size={18} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                {
+                    isAdjustModalOpen && selectedRegistro && (
+                        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-6 overflow-y-auto">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50" onClick={() => setIsAdjustModalOpen(false)} />
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className={`relative w-full max-w-lg rounded-2xl border shadow-xl my-4 md:my-8 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                            >
+                                <div className="p-6">
+                                    <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hora Original</label>
-                                            <input type="time" value={selectedRegistro.hora_registro.slice(0, 5)} disabled className={`${inputClass} w-full opacity-50 cursor-not-allowed`} />
+                                            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ajuste de Ponto</h2>
+                                            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                {TIPO_REGISTRO_LABELS[selectedRegistro.tipo_registro as keyof typeof TIPO_REGISTRO_LABELS]} • {new Date(selectedRegistro.data_registro + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                            </p>
                                         </div>
+                                        <button onClick={() => setIsAdjustModalOpen(false)} className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
+                                            <X size={18} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hora Original</label>
+                                                <input type="time" value={selectedRegistro.hora_registro.slice(0, 5)} disabled className={`${inputClass} w-full opacity-50 cursor-not-allowed`} />
+                                            </div>
+                                            <div>
+                                                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nova Hora</label>
+                                                <input
+                                                    type="time"
+                                                    value={ajusteForm.novaHora}
+                                                    onChange={(e) => setAjusteForm({ ...ajusteForm, novaHora: e.target.value })}
+                                                    className={`${inputClass} w-full`}
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nova Hora</label>
-                                            <input
-                                                type="time"
-                                                value={ajusteForm.novaHora}
-                                                onChange={(e) => setAjusteForm({ ...ajusteForm, novaHora: e.target.value })}
+                                            <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Justificativa</label>
+                                            <select
+                                                value={ajusteForm.tipoJustificativaId}
+                                                onChange={(e) => setAjusteForm({ ...ajusteForm, tipoJustificativaId: e.target.value })}
                                                 className={`${inputClass} w-full`}
+                                            >
+                                                <option value="">Selecione um motivo...</option>
+                                                {tiposJustificativa.map(tipo => (
+                                                    <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Observações</label>
+                                            <textarea
+                                                value={ajusteForm.observacoes}
+                                                onChange={(e) => setAjusteForm({ ...ajusteForm, observacoes: e.target.value })}
+                                                placeholder="Descreva o motivo do ajuste..."
+                                                className={`${inputClass} w-full h-24 resize-none`}
                                             />
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Justificativa</label>
-                                        <select
-                                            value={ajusteForm.tipoJustificativaId}
-                                            onChange={(e) => setAjusteForm({ ...ajusteForm, tipoJustificativaId: e.target.value })}
-                                            className={`${inputClass} w-full`}
+                                    <div className="flex gap-3 mt-8">
+                                        <button
+                                            onClick={() => setIsAdjustModalOpen(false)}
+                                            className={`flex-1 py-2.5 rounded-lg font-medium text-sm ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                                         >
-                                            <option value="">Selecione um motivo...</option>
-                                            {tiposJustificativa.map(tipo => (
-                                                <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Observações</label>
-                                        <textarea
-                                            value={ajusteForm.observacoes}
-                                            onChange={(e) => setAjusteForm({ ...ajusteForm, observacoes: e.target.value })}
-                                            placeholder="Descreva o motivo do ajuste..."
-                                            className={`${inputClass} w-full h-24 resize-none`}
-                                        />
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={handleSaveAjuste}
+                                            disabled={savingAjuste || !ajusteForm.novaHora}
+                                            className="flex-1 bg-primary-500 hover:bg-primary-600 py-2.5 rounded-lg text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {savingAjuste ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={14} /> Salvar</>}
+                                        </button>
                                     </div>
                                 </div>
-
-                                <div className="flex gap-3 mt-8">
-                                    <button
-                                        onClick={() => setIsAdjustModalOpen(false)}
-                                        className={`flex-1 py-2.5 rounded-lg font-medium text-sm ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={handleSaveAjuste}
-                                        disabled={savingAjuste || !ajusteForm.novaHora}
-                                        className="flex-1 bg-primary-500 hover:bg-primary-600 py-2.5 rounded-lg text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {savingAjuste ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><Save size={14} /> Salvar</>}
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )
+                            </motion.div>
+                        </div>
+                    )
                 }
             </AnimatePresence >
         </div >

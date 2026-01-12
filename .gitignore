@@ -40,3 +40,13 @@ android/app/src/main/assets/public/
 
 # Temp
 temp-vite/
+
+# Competitor Analysis & Media
+frame_*.png
+*.webm
+*.mp4
+analise_tiquetaque/
+
+# Documentation (as requested)
+*.md
+!README.md

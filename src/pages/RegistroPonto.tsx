@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useGeolocalizacao } from '../hooks/useGeolocalizacao';
 import { useBiometria } from '../hooks/useBiometria';
-import { registrarPonto, buscarRegistrosDia, buscarRegistrosPeriodo } from '../services/authPonto';
+import { registrarPonto, buscarRegistrosDia, buscarRegistrosPeriodo, buscarSaldoBancoHoras } from '../services/authPonto';
 import { gerarComprovantePDF, salvarComprovante } from '../services/comprovantePonto';
 import { offlineSyncService } from '../services/offlineSyncService';
 import { supabase } from '../services/supabaseClient';
@@ -23,7 +23,8 @@ import {
     WifiOff,
     ShieldCheck,
     ShieldCheck as ShieldCheckIcon,
-    X
+    X,
+    Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MiniMap from '../components/MiniMap';
@@ -45,6 +46,7 @@ const RegistroPonto = () => {
     const [lastPdfDoc, setLastPdfDoc] = useState<any>(null);
     const [pendingSyncCount, setPendingSyncCount] = useState(0);
     const [biometryFailCount, setBiometryFailCount] = useState(0);
+    const [saldoBH, setSaldoBH] = useState<{ saldo_minutos: number; saldo_formatado: string } | null>(null);
 
     useEffect(() => {
         const checkSync = async () => {
@@ -65,6 +67,9 @@ const RegistroPonto = () => {
         if (profile?.funcionario_id) {
             buscarRegistrosDia(profile.funcionario_id).then(({ registros }) => {
                 setRegistrosDia(registros);
+            });
+            buscarSaldoBancoHoras(profile.funcionario_id).then(({ saldo }) => {
+                setSaldoBH(saldo);
             });
         }
     }, [profile?.funcionario_id]);
@@ -433,6 +438,27 @@ const RegistroPonto = () => {
                 >
                     <FileText size={14} /> Espelho de Ponto Mensal
                 </button>
+
+                {/* Banco de Horas Summary */}
+                {saldoBH && (
+                    <div className={`mt-4 p-3 rounded-xl border flex flex-col gap-2 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Wallet className={isDark ? 'text-primary-400' : 'text-primary-500'} size={18} />
+                                <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Saldo Banco</span>
+                            </div>
+                            <span className={`text-sm font-bold ${saldoBH.saldo_minutos >= 0 ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-rose-400' : 'text-rose-600')}`}>
+                                {saldoBH.saldo_formatado}
+                            </span>
+                        </div>
+                        {(saldoBH as any).regra_nome && (
+                            <div className="flex items-center justify-between border-t pt-2 border-slate-700/10">
+                                <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Regra Ativa</span>
+                                <span className={`text-[10px] font-medium ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>{(saldoBH as any).regra_nome}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </motion.div>
 
             <AnimatePresence mode="wait">

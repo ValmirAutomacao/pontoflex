@@ -1,6 +1,12 @@
 import { supabase } from './supabaseClient';
 import * as faceapi from 'face-api.js';
 
+const isValidUUID = (uuid: string | undefined | null): boolean => {
+    if (!uuid) return false;
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+};
+
 let modelsLoaded = false;
 
 /**
@@ -160,6 +166,10 @@ export const verifyBiometry = async (
     funcionarioId: string,
     descriptor: Float32Array
 ): Promise<{ verified: boolean; confidence: number; error?: string }> => {
+    if (!isValidUUID(funcionarioId)) {
+        return { verified: false, confidence: 0, error: 'ID inválido' };
+    }
+
     const { data, error } = await supabase
         .from('funcionarios_biometria')
         .select('face_descriptors')

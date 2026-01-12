@@ -60,18 +60,15 @@ export interface Funcao {
     setores?: { nome: string };
 }
 
-export interface JornadaTrabalho {
+export interface EscalaServico {
     id: string;
     nome: string;
-    descricao?: string;
-    pe: string; // Primeira Entrada
-    ps: string; // Primeira Saída
-    se?: string; // Segunda Entrada
-    ss: string; // Segunda Saída
+    tipo: 'NORMAL' | 'HORISTA' | 'FLEXIVEL' | '12X36' | 'PLANTAO';
+    cor: string;
     carga_horaria_diaria: number;
-    tem_intervalo: boolean;
-    duracao_intervalo?: number;
-    status: 'Ativo' | 'Inativo';
+    carga_horaria_semanal: number;
+    ativo: boolean;
+    horario_virada?: string;
     empresa_id: string;
     created_at: string;
 }
@@ -81,12 +78,15 @@ export interface Funcionario {
     nome: string;
     email: string;
     telefone?: string;
+    whatsapp?: string;
     cpf: string;
     ctps?: string;
+    pis_nis?: string;
     data_admissao?: string;
     setor_id?: string;
     funcao_id?: string;
-    jornada_id?: string;
+    escala_id?: string;
+    data_inicio_escala?: string;
     user_id?: string;
     foto_url?: string;
     status: 'Ativo' | 'Inativo' | 'Férias';
@@ -95,7 +95,7 @@ export interface Funcionario {
     // Relacionamentos
     setores?: { nome: string };
     funcoes?: { nome: string };
-    jornadas_trabalho?: JornadaTrabalho;
+    escalas_servico?: EscalaServico;
 }
 
 export interface FuncionarioBiometria {

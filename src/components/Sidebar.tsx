@@ -15,7 +15,8 @@ import {
     MapPin,
     AlertCircle,
     FileCheck,
-    Calendar
+    Calendar,
+    Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
@@ -43,7 +44,6 @@ const menuData: MenuItem[] = [
         subItems: [
             { title: 'Setores', path: '/setores', permission: 'modulo_setores' },
             { title: 'Funções', path: '/funcoes', permission: 'modulo_funcoes' },
-            { title: 'Jornadas', path: '/jornadas', permission: 'modulo_jornadas' },
             { title: 'Locais de Trabalho', path: '/locais-trabalho', isNew: true, permission: 'modulo_locais' },
         ],
     },
@@ -61,7 +61,16 @@ const menuData: MenuItem[] = [
         subItems: [
             { title: 'Registro de Ponto', path: '/registro-ponto', permission: 'modulo_registro_ponto' },
             { title: 'Controle de Ponto', path: '/controle-ponto', permission: 'modulo_controle_ponto' },
-            { title: 'Afastamentos', path: '/afastamentos', isNew: true, permission: 'modulo_afastamentos' },
+            { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Calendário Operacional', path: '/calendario-visual', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Relatórios Consolidados', path: '/relatorios', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Inconsistências e Faltas', path: '/inconsistencias', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Fechamento de Mês', path: '/fechamento', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Minhas Assinaturas', path: '/assinatura-ponto', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Exportação Folha', path: '/exportacao-folha', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Escalas de Serviço', path: '/escalas', permission: 'modulo_banco_horas' },
+            { title: 'Banco de Horas', path: '/banco-horas', isNew: true, permission: 'modulo_banco_horas' },
+            { title: 'Afastamentos', path: '/afastamentos', permission: 'modulo_afastamentos' },
         ],
     },
     {
@@ -70,6 +79,7 @@ const menuData: MenuItem[] = [
         subItems: [
             { title: 'Tipos de Justificativa', path: '/tipos-justificativa', isNew: true, permission: 'modulo_justificativas' },
             { title: 'Tipos de Afastamento', path: '/tipos-afastamento', isNew: true, permission: 'modulo_tipos_afastamento' },
+            { title: 'Regras de Horários', path: '/regras-horas', isNew: true, permission: 'modulo_banco_horas' },
         ],
     },
 ];

@@ -1,5 +1,11 @@
 import { supabase } from './supabaseClient';
 
+const isValidUUID = (uuid: string | undefined | null): boolean => {
+    if (!uuid) return false;
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+};
+
 export interface OnboardingConfig {
     funcionarioId: string;
     nome: string;
@@ -14,6 +20,8 @@ export const onboardingService = {
      * Gera o link de setup para o colaborador
      */
     generateSetupLink: async (funcionarioId: string) => {
+        if (!isValidUUID(funcionarioId)) return null;
+
         const { data, error } = await supabase
             .from('funcionarios')
             .select('setup_token')
