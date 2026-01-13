@@ -23,7 +23,20 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, addDays, differenceInDays, parseISO } from 'date-fns';
+import {
+    format,
+    startOfMonth,
+    endOfMonth,
+    eachDayOfInterval,
+    isSameMonth,
+    isSameDay,
+    addMonths,
+    subMonths,
+    isToday,
+    addDays,
+    differenceInDays,
+    parseISO
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
@@ -258,7 +271,7 @@ const Ferias: React.FC = () => {
                                 {Array.from({ length: startOfMonth(currentDate).getDay() }).map((_, i) => (
                                     <div key={`empty-${i}`} className={`h-24 border-b border-r p-2 opacity-20 ${isDark ? 'border-slate-700/30' : 'border-slate-100'}`} />
                                 ))}
-                                {days.map(day => {
+                                {days.map((day: Date) => {
                                     const projectsOnThisDay = periodos.filter(p => {
                                         const start = parseISO(p.data_inicio);
                                         const end = parseISO(p.data_fim);
