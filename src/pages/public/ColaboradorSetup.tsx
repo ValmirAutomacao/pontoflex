@@ -196,7 +196,7 @@ const ColaboradorSetup = () => {
 
                             <div className="text-center mb-10">
                                 <h1 className="text-3xl font-black tracking-tight dark:text-white mb-2">Seja bem-vindo!</h1>
-                                <p className="text-slate-500 dark:text-slate-400">Olá <span className="font-bold text-primary-500">{employee?.nome}</span>, vamos configurar seu acesso ao Ponto Flex.</p>
+                                <p className="text-slate-500 dark:text-slate-400">Olá <span className="font-bold text-primary-500">{employee?.nome}</span>, vamos configurar seu acesso ao Pontoflex.</p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">

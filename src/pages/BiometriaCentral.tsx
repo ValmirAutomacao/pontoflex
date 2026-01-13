@@ -150,7 +150,7 @@ const BiometriaCentral = () => {
 
     const handleEmailLink = () => {
         if (!selectedFunc) return;
-        const subject = encodeURIComponent('Cadastro de Biometria - Ponto Flex');
+        const subject = encodeURIComponent('Cadastro de Biometria - Pontoflex');
         const body = encodeURIComponent(`Olá ${selectedFunc.nome},\n\nAcesse o link abaixo para cadastrar sua biometria facial:\n\n${generatedLink}\n\nEste link é válido por 24 horas.\n\nAtenciosamente,\nEquipe RH`);
         window.open(`mailto:${selectedFunc.email}?subject=${subject}&body=${body}`);
     };

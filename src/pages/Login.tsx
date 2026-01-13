@@ -64,14 +64,13 @@ const Login = () => {
             >
                 {/* Logo */}
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-[#1E3A5F] to-[#0F2744] shadow-lg">
-                        <ShieldCheck size={28} className="text-white" />
-                    </div>
-                    <h1 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        Ponto Flex
-                    </h1>
-                    <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Sistema de Gestão de Ponto
+                    <img
+                        src="/LOGOMARCA_FIM.png"
+                        alt="Logo"
+                        className="max-w-[240px] h-auto mb-2"
+                    />
+                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Inteligência Operacional
                     </p>
                 </div>
 

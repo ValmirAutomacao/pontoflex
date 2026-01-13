@@ -79,7 +79,7 @@ export const onboardingService = {
      */
     getWhatsAppLink: async (config: OnboardingConfig) => {
         const link = await onboardingService.generateSetupLink(config.funcionarioId);
-        const mensagem = `Olá ${config.nome}! Bem-vindo à ${config.empresaNome}. Estamos muito felizes em ter você conosco! 🚀\n\nPara começar, você precisa configurar sua senha de acesso ao Ponto Flex por este link:\n\n${link}\n\nApós definir sua senha, você também poderá cadastrar sua biometria facial para registrar seu ponto com facilidade.`;
+        const mensagem = `Olá ${config.nome}! Bem-vindo à ${config.empresaNome}. Estamos muito felizes em ter você conosco! 🚀\n\nPara começar, você precisa configurar sua senha de acesso ao Pontoflex por este link:\n\n${link}\n\nApós definir sua senha, você também poderá cadastrar sua biometria facial para registrar seu ponto com facilidade.`;
 
         const telefone = config.whatsapp?.replace(/\D/g, '');
         return `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;

@@ -119,10 +119,11 @@ const BiometriaRemota = () => {
             <div className="w-full max-w-md">
                 {/* Header */}
                 <div className="flex flex-col items-center mb-12 text-center">
-                    <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-500 mb-6 border border-primary-500/20 shadow-glow shadow-primary-500/10">
-                        <ShieldCheck size={32} />
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2">Ponto Flex</h1>
+                    <img
+                        src="/LOGOMARCA_FIM.png"
+                        alt="Logo"
+                        className="max-w-[200px] h-auto mb-6"
+                    />
                     <p className="text-slate-400 text-sm font-medium uppercase tracking-widest">Cadastro Biométrico</p>
                 </div>
 

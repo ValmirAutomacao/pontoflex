@@ -67,7 +67,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                             </button>
                         )}
                         <h2 className={`text-xs lg:text-sm font-medium truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {isMobile ? 'Ponto Flex' : 'Sistema de Gestão de Ponto Inteligente'}
+                            {isMobile ? 'Pontoflex' : 'Sistema de Gestão de Ponto Inteligente'}
                         </h2>
                     </div>
 

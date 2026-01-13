@@ -182,14 +182,12 @@ const Sidebar = () => {
     return (
         <aside className="w-[280px] h-screen fixed left-0 top-0 flex flex-col z-50 bg-sidebar-gradient dark:bg-sidebar-gradient-dark shadow-xl">
             {/* Logo */}
-            <div className="p-6 flex items-center gap-4">
-                <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
-                    <ShieldCheck className="text-white" size={24} strokeWidth={2.5} />
-                </div>
-                <div>
-                    <h1 className="text-xl font-bold text-white tracking-tight">Ponto Flex</h1>
-                    <p className="text-[10px] text-white/50 font-medium">Gestão de Ponto</p>
-                </div>
+            <div className="p-6 flex flex-col items-center gap-2">
+                <img
+                    src="/LOGOMARCA_FIM.png"
+                    alt="Logo"
+                    className="max-w-[200px] h-auto"
+                />
             </div>
 
             {/* Menu */}
