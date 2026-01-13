@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import BottomTabs from '../components/BottomTabs';
+import NotificationBell from '../components/NotificationBell';
 import { useTheme } from '../contexts/ThemeContext';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,7 +72,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         </h2>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <NotificationBell />
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
                             }`}>
                             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
