@@ -65,7 +65,7 @@ const Login = () => {
                 {/* Logo */}
                 <div className="flex flex-col items-center mb-8">
                     <img
-                        src="/LOGOMARCA_FIM.png"
+                        src="/LOGO_FIM_2.png"
                         alt="Logo"
                         className="max-w-[240px] h-auto mb-2"
                     />

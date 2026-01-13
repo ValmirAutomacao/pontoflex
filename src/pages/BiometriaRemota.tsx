@@ -120,7 +120,7 @@ const BiometriaRemota = () => {
                 {/* Header */}
                 <div className="flex flex-col items-center mb-12 text-center">
                     <img
-                        src="/LOGOMARCA_FIM.png"
+                        src="/LOGO_FIM_2.png"
                         alt="Logo"
                         className="max-w-[200px] h-auto mb-6"
                     />
