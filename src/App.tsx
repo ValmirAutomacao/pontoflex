@@ -41,6 +41,7 @@ const RelatorioFuncionarios = lazy(() => import('./pages/RelatorioFuncionarios')
 const ImportarColaboradores = lazy(() => import('./pages/ImportarColaboradores'));
 const MinhasSolicitacoes = lazy(() => import('./pages/MinhasSolicitacoes'));
 const AprovacaoJustificativas = lazy(() => import('./pages/AprovacaoJustificativas'));
+const Ferias = lazy(() => import('./pages/Ferias'));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -94,6 +95,7 @@ const AppContent = () => {
                   <Route path="/importar-colaboradores" element={<ImportarColaboradores />} />
                   <Route path="/minhas-solicitacoes" element={<MinhasSolicitacoes />} />
                   <Route path="/aprovacao-justificativas" element={<AprovacaoJustificativas />} />
+                  <Route path="/ferias" element={<Ferias />} />
                   <Route path="/admin/empresas" element={<GestaoEmpresas />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

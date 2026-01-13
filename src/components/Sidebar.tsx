@@ -72,6 +72,7 @@ const menuData: MenuItem[] = [
             { title: 'Fechamento de Mês', path: '/fechamento', isNew: true, permission: 'modulo_ponto' },
             { title: 'Minhas Assinaturas', path: '/assinatura-ponto', isNew: true, permission: 'modulo_ponto' },
             { title: 'Afastamentos', path: '/afastamentos', permission: 'modulo_afastamentos' },
+            { title: 'Gestão de Férias', path: '/ferias', isNew: true, permission: 'modulo_afastamentos' },
         ],
     },
     {
