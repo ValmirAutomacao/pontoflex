@@ -184,7 +184,7 @@ const Sidebar = () => {
             {/* Logo */}
             <div className="p-6 flex flex-col items-center gap-2">
                 <img
-                    src="/LOGO_FIM_2.png"
+                    src="/LOGO_TRANSP.png"
                     alt="Logo"
                     className="max-w-[200px] h-auto"
                 />
