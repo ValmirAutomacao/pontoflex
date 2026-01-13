@@ -195,13 +195,13 @@ const ControlePonto = () => {
             empresa_id: profile?.empresa_id || '',
             metodo_autenticacao: 'manual',
             observacoes: '',
-            localizacao_gps: null,
+            localizacao_gps: undefined,
             justificativa_id: null,
             ajustado_por_id: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             status_ajuste: 'pendente'
-        });
+        } as any);
         setAjusteForm({
             novaHora: '08:00',
             tipoJustificativaId: '',
@@ -704,4 +704,28 @@ export const agruparRegistrosMelhorado = (
     }
 
     return agrupados.sort((a, b) => b.data.localeCompare(a.data) || a.funcionario.nome.localeCompare(b.funcionario.nome));
+};
+
+// Versão simplificada para compatibilidade (usada no RegistroPonto)
+export const agruparRegistros = (registrations: any[]): any[] => {
+    // Agrupa por data e funcionario
+    const map: { [key: string]: any } = {};
+
+    registrations.forEach(reg => {
+        const key = `${reg.data_registro}-${reg.funcionario_id}`;
+        if (!map[key]) {
+            map[key] = {
+                data: reg.data_registro,
+                funcionario_id: reg.funcionario_id,
+                entrada: null,
+                saida_almoco: null,
+                retorno_almoco: null,
+                saida: null,
+                total_horas: 0
+            };
+        }
+        map[key][reg.tipo_registro] = reg;
+    });
+
+    return Object.values(map);
 };

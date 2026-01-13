@@ -173,8 +173,8 @@ export interface RegistroPonto {
     tipo_registro: TipoRegistroPonto;
     ip_address?: string;
     user_agent?: string;
-    localizacao_gps?: { lat: number; lng: number };
-    metodo_autenticacao: 'senha' | 'facial' | 'fallback_senha';
+    localizacao_gps?: { lat: number; lng: number } | null;
+    metodo_autenticacao: 'senha' | 'facial' | 'fallback_senha' | 'manual';
     confianca_facial?: number;
     observacoes?: string;
     empresa_id: string;
