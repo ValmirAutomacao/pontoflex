@@ -9,4 +9,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-ui': ['lucide-react', 'framer-motion', 'react-router-dom'],
+          'vendor-utils': ['jspdf', 'html2canvas', '@supabase/supabase-js'],
+          'vendor-biometria': ['face-api.js'],
+        },
+      },
+    },
+  },
 });
