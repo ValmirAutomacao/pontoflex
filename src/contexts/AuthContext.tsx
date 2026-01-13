@@ -14,16 +14,18 @@ const ADMIN_DEFAULT_PERMISSIONS = [
     'modulo_dashboard',
     'modulo_setores',
     'modulo_funcoes',
+    'modulo_jornadas',
+    'modulo_locais',
     'modulo_colaboradores',
     'modulo_biometria',
     'modulo_registro_ponto',
     'modulo_ponto',
-    'modulo_controle_ponto',
-    'modulo_locais',
+    'modulo_status_live',
+    'modulo_banco_horas',
+    'modulo_afastamentos',
     'modulo_justificativas',
     'modulo_tipos_afastamento',
-    'modulo_afastamentos',
-    'modulo_banco_horas'
+    'modulo_relatorios'
 ];
 
 interface UserProfile {

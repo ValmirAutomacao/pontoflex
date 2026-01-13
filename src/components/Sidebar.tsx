@@ -79,8 +79,8 @@ const menuData: MenuItem[] = [
         title: 'Relatórios',
         icon: FileText,
         subItems: [
-            { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_ponto' },
-            { title: 'Central de Relatórios', path: '/relatorios', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_status_live' },
+            { title: 'Central de Relatórios', path: '/relatorios', isNew: true, permission: 'modulo_relatorios' },
             { title: 'Relatório de Funcionários', path: '/relatorios/funcionarios', isNew: true, permission: 'modulo_colaboradores' },
             { title: 'Inconsistências e Faltas', path: '/inconsistencias', isNew: true, permission: 'modulo_ponto' },
             { title: 'Exportação Folha', path: '/exportacao-folha', isNew: true, permission: 'modulo_ponto' },

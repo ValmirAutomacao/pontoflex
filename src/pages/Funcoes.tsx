@@ -38,42 +38,57 @@ const PERMISSOES_MODULOS = [
         id: 'dashboard',
         label: 'Dashboard',
         items: [
-            { id: 'modulo_dashboard', label: 'Painel Geral', desc: 'Visualizar indicadores e estatísticas' },
+            { id: 'modulo_dashboard', label: 'Painel Geral', desc: 'Visualizar indicadores e estatísticas em tempo real' },
         ]
     },
     {
         id: 'organizacional',
         label: 'Gestão Organizacional',
         items: [
-            { id: 'modulo_setores', label: 'Setores', desc: 'Gerenciar departamentos' },
-            { id: 'modulo_funcoes', label: 'Funções', desc: 'Configurar cargos e permissões' },
-            { id: 'modulo_jornadas', label: 'Jornadas', desc: 'Controlar horários de trabalho' },
-            { id: 'modulo_locais', label: 'Locais de Trabalho', desc: 'Gerenciar unidades e obras' },
+            { id: 'modulo_setores', label: 'Setores e Unidades', desc: 'Gerenciar departamentos e dados da empresa' },
+            { id: 'modulo_funcoes', label: 'Funções e Acessos', desc: 'Configurar cargos e níveis de permissão' },
+            { id: 'modulo_jornadas', label: 'Jornadas de Trabalho', desc: 'Controlar horários e turnos' },
+            { id: 'modulo_locais', label: 'Locais de Trabalho', desc: 'Gerenciar geofencing e unidades físicas' },
         ]
     },
     {
         id: 'pessoal',
         label: 'Gestão de Pessoal',
         items: [
-            { id: 'modulo_colaboradores', label: 'Colaboradores', desc: 'Gestão completa de funcionários' },
-            { id: 'modulo_biometria', label: 'Biometria', desc: 'Gerenciar cadastros biométricos' },
+            { id: 'modulo_colaboradores', label: 'Colaboradores', desc: 'Gestão completa, importação e relatórios de RH' },
+            { id: 'modulo_biometria', label: 'Gestão Biométrica', desc: 'Gerenciar cadastros e validações faciais' },
         ]
     },
     {
-        id: 'ponto',
-        label: 'Módulo Ponto',
+        id: 'ponto_gestao',
+        label: 'Gestão de Ponto',
         items: [
-            { id: 'modulo_registro_ponto', label: 'Registro de Ponto', desc: 'Acesso à tela de marcação' },
-            { id: 'modulo_controle_ponto', label: 'Controle de Ponto', desc: 'Visualizar e validar batidas' },
-            { id: 'modulo_afastamentos', label: 'Afastamentos', desc: 'Gerenciar faltas, férias e atestados' },
+            { id: 'modulo_ponto', label: 'Controle Operacional', desc: 'Escalas, fechamento, aprovações e exportação' },
+            { id: 'modulo_status_live', label: 'Monitoramento Live', desc: 'Acompanhar entradas e saídas em tempo real' },
+            { id: 'modulo_banco_horas', label: 'Banco de Horas', desc: 'Configurar regras e extratos de compensação' },
+        ]
+    },
+    {
+        id: 'ponto_operacional',
+        label: 'Operações de Ponto',
+        items: [
+            { id: 'modulo_registro_ponto', label: 'Registro e Solicitações', desc: 'Marcação de ponto e minhas justificativas' },
+            { id: 'modulo_afastamentos', label: 'Férias e Afastamentos', desc: 'Lançar faltas, férias e licenças' },
+        ]
+    },
+    {
+        id: 'analises',
+        label: 'Análises e Relatórios',
+        items: [
+            { id: 'modulo_relatorios', label: 'Central de Relatórios', desc: 'Relatórios consolidados e BI de sentimentos' },
         ]
     },
     {
         id: 'configuracoes',
-        label: 'Configurações',
+        label: 'Configurações de Regras',
         items: [
-            { id: 'modulo_justificativas', label: 'Tipos de Justificativa', desc: 'Configurar motivos de ajuste' },
-            { id: 'modulo_tipos_afastamento', label: 'Tipos de Afastamento', desc: 'Categorias de ausência' },
+            { id: 'modulo_justificativas', label: 'Motivos de Ajuste', desc: 'Configurar tipos de justificativa' },
+            { id: 'modulo_tipos_afastamento', label: 'Categorias de Ausência', desc: 'Gerenciar tipos de afastamento' },
         ]
     }
 ];
