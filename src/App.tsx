@@ -37,6 +37,10 @@ const GestaoEmpresas = lazy(() => import('./pages/superadmin/GestaoEmpresas'));
 const EmpresaSetup = lazy(() => import('./pages/public/EmpresaSetup'));
 const BiometriaRegistro = lazy(() => import('./pages/public/BiometriaRegistro'));
 const ColaboradorSetup = lazy(() => import('./pages/public/ColaboradorSetup'));
+const RelatorioFuncionarios = lazy(() => import('./pages/RelatorioFuncionarios'));
+const ImportarColaboradores = lazy(() => import('./pages/ImportarColaboradores'));
+const MinhasSolicitacoes = lazy(() => import('./pages/MinhasSolicitacoes'));
+const AprovacaoJustificativas = lazy(() => import('./pages/AprovacaoJustificativas'));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -86,6 +90,10 @@ const AppContent = () => {
                   <Route path="/exportacao-folha" element={<ExportacaoFolha />} />
                   <Route path="/regras-horas" element={<RegrasHoras />} />
                   <Route path="/escalas" element={<Escalas />} />
+                  <Route path="/relatorios/funcionarios" element={<RelatorioFuncionarios />} />
+                  <Route path="/importar-colaboradores" element={<ImportarColaboradores />} />
+                  <Route path="/minhas-solicitacoes" element={<MinhasSolicitacoes />} />
+                  <Route path="/aprovacao-justificativas" element={<AprovacaoJustificativas />} />
                   <Route path="/admin/empresas" element={<GestaoEmpresas />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

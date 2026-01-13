@@ -17,7 +17,9 @@ import {
     FileCheck,
     Calendar,
     Wallet,
-    FileText
+    FileText,
+    Upload,
+    MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
@@ -54,6 +56,7 @@ const menuData: MenuItem[] = [
         icon: Users,
         subItems: [
             { title: 'Colaboradores', path: '/colaboradores', permission: 'modulo_colaboradores' },
+            { title: 'Importar Funcionários', path: '/importar-colaboradores', isNew: true, permission: 'modulo_colaboradores' },
             { title: 'Biometria', path: '/biometria', permission: 'modulo_biometria' },
         ],
     },
@@ -77,8 +80,17 @@ const menuData: MenuItem[] = [
         subItems: [
             { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_ponto' },
             { title: 'Central de Relatórios', path: '/relatorios', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Relatório de Funcionários', path: '/relatorios/funcionarios', isNew: true, permission: 'modulo_colaboradores' },
             { title: 'Inconsistências e Faltas', path: '/inconsistencias', isNew: true, permission: 'modulo_ponto' },
             { title: 'Exportação Folha', path: '/exportacao-folha', isNew: true, permission: 'modulo_ponto' },
+        ],
+    },
+    {
+        title: 'Justificativas',
+        icon: MessageSquare,
+        subItems: [
+            { title: 'Minhas Solicitações', path: '/minhas-solicitacoes', isNew: true, permission: 'modulo_registro_ponto' },
+            { title: 'Aprovação', path: '/aprovacao-justificativas', isNew: true, permission: 'modulo_ponto' },
         ],
     },
     {

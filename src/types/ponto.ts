@@ -237,3 +237,39 @@ export interface DeviceInfo {
     user_agent: string;
     platform: string;
 }
+
+// Solicitações de Justificativa/Atestado
+export interface SolicitacaoJustificativa {
+    id: string;
+    funcionario_id: string;
+    tipo: 'justificativa' | 'atestado';
+    motivo: string;
+    data_ocorrencia: string;
+    hora_afetada?: string;
+    dia_inteiro: boolean;
+    cid?: string;
+    quantidade_dias?: number;
+    documento_url?: string;
+    status: 'pendente' | 'aprovado' | 'rejeitado';
+    aprovado_por?: string;
+    data_aprovacao?: string;
+    observacao_aprovador?: string;
+    empresa_id: string;
+    created_at: string;
+    // Relacionamentos
+    funcionarios?: { nome: string; email: string };
+    aprovador?: { nome: string };
+}
+
+// Notificações In-App
+export interface Notificacao {
+    id: string;
+    usuario_id: string;
+    tipo: string;
+    titulo: string;
+    mensagem?: string;
+    lida: boolean;
+    link?: string;
+    empresa_id: string;
+    created_at: string;
+}
