@@ -17,11 +17,13 @@ const ADMIN_DEFAULT_PERMISSIONS = [
     'modulo_colaboradores',
     'modulo_biometria',
     'modulo_registro_ponto',
+    'modulo_ponto',
     'modulo_controle_ponto',
     'modulo_locais',
     'modulo_justificativas',
     'modulo_tipos_afastamento',
-    'modulo_afastamentos'
+    'modulo_afastamentos',
+    'modulo_banco_horas'
 ];
 
 interface UserProfile {
@@ -175,7 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             return;
         }
 
-        const isDev = user.email === DEVELOPER_EMAIL;
+        const isDev = user.email?.toLowerCase() === DEVELOPER_EMAIL.toLowerCase();
         console.log('[AuthContext] Fetching profile for user:', user.id, user.email);
 
         try {
@@ -205,7 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     empresas!funcionarios_empresa_id_fkey (status, bloqueado_por_atraso, razao_social, cnpj, endereco)
                 `)
                 .eq('user_id', user.id)
-                .single();
+                .maybeSingle();
 
             console.log('[AuthContext] Funcionario result:', { funcionario, error });
             if (error) {
@@ -222,7 +224,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     role: role,
                     nome: user.user_metadata?.nome || user.email?.split('@')[0] || 'Usuário',
                     empresa_id: user.user_metadata?.empresa_id,
-                    permissoes: user.user_metadata?.permissoes || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
+                    permissoes: ['developer', 'superadmin'].includes(role)
+                        ? [...ADMIN_DEFAULT_PERMISSIONS, 'developer_only']
+                        : (user.user_metadata?.permissoes || (role === 'admin' ? ADMIN_DEFAULT_PERMISSIONS : [])),
                 };
                 console.log('[AuthContext] Fallback profile:', userProfile);
                 setProfile(userProfile);
@@ -286,7 +290,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     cpf: funcionario.cpf,
                     pis_nis: funcionario.pis_nis,
                     biometria_ativa: biometriaAtiva,
-                    permissoes: (funcao?.permissoes as string[]) || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
+                    permissoes: ['developer', 'superadmin'].includes(role)
+                        ? [...ADMIN_DEFAULT_PERMISSIONS, 'developer_only']
+                        : ((funcao?.permissoes as string[]) || (role === 'admin' ? ADMIN_DEFAULT_PERMISSIONS : [])),
                     empresa_bloqueada: (funcionario.empresas as any)?.status !== 'ativo' || (funcionario.empresas as any)?.bloqueado_por_atraso,
                     empresa: Array.isArray(funcionario.empresas) ? funcionario.empresas[0] : funcionario.empresas
                 };
@@ -302,7 +308,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 role: role,
                 nome: user.user_metadata?.nome || user.email?.split('@')[0] || 'Usuário',
                 empresa_id: user.user_metadata?.empresa_id,
-                permissoes: user.user_metadata?.permissoes || (['developer', 'admin', 'superadmin'].includes(role) ? ADMIN_DEFAULT_PERMISSIONS : []),
+                permissoes: ['developer', 'superadmin'].includes(role)
+                    ? [...ADMIN_DEFAULT_PERMISSIONS, 'developer_only']
+                    : (user.user_metadata?.permissoes || (role === 'admin' ? ADMIN_DEFAULT_PERMISSIONS : [])),
             };
             setProfile(userProfile);
         }

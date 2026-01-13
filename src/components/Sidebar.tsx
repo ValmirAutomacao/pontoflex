@@ -16,7 +16,8 @@ import {
     AlertCircle,
     FileCheck,
     Calendar,
-    Wallet
+    Wallet,
+    FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
@@ -42,6 +43,7 @@ const menuData: MenuItem[] = [
         title: 'Gestão Organizacional',
         icon: ShieldCheck,
         subItems: [
+            { title: 'Dados da Empresa', path: '/dados-empresa', permission: 'modulo_setores' },
             { title: 'Setores', path: '/setores', permission: 'modulo_setores' },
             { title: 'Funções', path: '/funcoes', permission: 'modulo_funcoes' },
             { title: 'Locais de Trabalho', path: '/locais-trabalho', isNew: true, permission: 'modulo_locais' },
@@ -60,17 +62,23 @@ const menuData: MenuItem[] = [
         icon: Clock,
         subItems: [
             { title: 'Registro de Ponto', path: '/registro-ponto', permission: 'modulo_registro_ponto' },
-            { title: 'Controle de Ponto', path: '/controle-ponto', permission: 'modulo_controle_ponto' },
-            { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Controle de Ponto', path: '/controle-ponto', permission: 'modulo_ponto' },
             { title: 'Calendário Operacional', path: '/calendario-visual', isNew: true, permission: 'modulo_ponto' },
-            { title: 'Relatórios Consolidados', path: '/relatorios', isNew: true, permission: 'modulo_ponto' },
-            { title: 'Inconsistências e Faltas', path: '/inconsistencias', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Escalas de Serviço', path: '/escalas', permission: 'modulo_ponto' },
+            { title: 'Banco de Horas', path: '/banco-horas', isNew: true, permission: 'modulo_ponto' },
             { title: 'Fechamento de Mês', path: '/fechamento', isNew: true, permission: 'modulo_ponto' },
             { title: 'Minhas Assinaturas', path: '/assinatura-ponto', isNew: true, permission: 'modulo_ponto' },
-            { title: 'Exportação Folha', path: '/exportacao-folha', isNew: true, permission: 'modulo_ponto' },
-            { title: 'Escalas de Serviço', path: '/escalas', permission: 'modulo_banco_horas' },
-            { title: 'Banco de Horas', path: '/banco-horas', isNew: true, permission: 'modulo_banco_horas' },
             { title: 'Afastamentos', path: '/afastamentos', permission: 'modulo_afastamentos' },
+        ],
+    },
+    {
+        title: 'Relatórios',
+        icon: FileText,
+        subItems: [
+            { title: 'Monitoramento Live', path: '/status-live', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Central de Relatórios', path: '/relatorios', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Inconsistências e Faltas', path: '/inconsistencias', isNew: true, permission: 'modulo_ponto' },
+            { title: 'Exportação Folha', path: '/exportacao-folha', isNew: true, permission: 'modulo_ponto' },
         ],
     },
     {
@@ -152,7 +160,7 @@ const SidebarItem = ({ item }: { item: MenuItem }) => {
 };
 
 const Sidebar = () => {
-    const { profile, signOut, isDeveloper } = useAuth();
+    const { profile, signOut, isDeveloper, isAdmin } = useAuth();
     const { theme, toggleTheme, isDark } = useTheme();
 
     const handleLogout = async () => {
@@ -187,7 +195,8 @@ const Sidebar = () => {
             {/* Menu */}
             <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-4">
                 {menuData.filter(item => {
-                    if (isDeveloper) return true;
+                    if (item.permission === 'developer_only') return isDeveloper;
+                    if (isDeveloper || isAdmin) return true;
                     if (item.permission && profile?.permissoes?.includes(item.permission)) return true;
                     if (item.subItems) {
                         return item.subItems.some(sub => profile?.permissoes?.includes(sub.permission || ''));
@@ -196,7 +205,7 @@ const Sidebar = () => {
                 }).map((item, index) => {
                     const filteredItem = {
                         ...item,
-                        subItems: isDeveloper ? item.subItems : item.subItems?.filter(sub => profile?.permissoes?.includes(sub.permission || ''))
+                        subItems: (isDeveloper || isAdmin) ? item.subItems : item.subItems?.filter(sub => profile?.permissoes?.includes(sub.permission || ''))
                     };
                     return <SidebarItem key={index} item={filteredItem} />;
                 })}
@@ -247,6 +256,8 @@ const Sidebar = () => {
                     </Link>
                 </div>
             )}
+
+
 
             {/* Profile */}
             <div className="p-4 mx-4 mb-4 bg-white/10 backdrop-blur-sm rounded-xl">

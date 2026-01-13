@@ -13,6 +13,7 @@ import BiometriaRemota from './pages/BiometriaRemota';
 import RegistroPonto from './pages/RegistroPonto';
 import ControlePonto from './pages/ControlePonto';
 import LocaisTrabalho from './pages/LocaisTrabalho';
+import ConfiguracaoEmpresa from './pages/ConfiguracaoEmpresa';
 import TiposJustificativa from './pages/TiposJustificativa';
 import TiposAfastamento from './pages/TiposAfastamento';
 import Afastamentos from './pages/Afastamentos';
@@ -21,6 +22,8 @@ import RegrasHoras from './pages/RegrasHoras';
 import Escalas from './pages/Escalas';
 import StatusLive from './pages/StatusLive';
 import Relatorios from './pages/Relatorios';
+import RelatorioConsolidado from './pages/RelatorioConsolidado';
+import RelatorioSentimentos from './pages/RelatorioSentimentos';
 import Inconsistencias from './pages/Inconsistencias';
 import CalendarioVisual from './pages/CalendarioVisual';
 import FechamentoMes from './pages/FechamentoMes';
@@ -56,12 +59,15 @@ const AppContent = () => {
               <Route path="/registro-ponto" element={<RegistroPonto />} />
               <Route path="/controle-ponto" element={<ControlePonto />} />
               <Route path="/locais-trabalho" element={<LocaisTrabalho />} />
+              <Route path="/dados-empresa" element={<ConfiguracaoEmpresa />} />
               <Route path="/tipos-justificativa" element={<TiposJustificativa />} />
               <Route path="/tipos-afastamento" element={<TiposAfastamento />} />
               <Route path="/afastamentos" element={<Afastamentos />} />
               <Route path="/banco-horas" element={<BancoHoras />} />
               <Route path="/status-live" element={<StatusLive />} />
               <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/relatorios/consolidado" element={<RelatorioConsolidado />} />
+              <Route path="/relatorios/sentimentos" element={<RelatorioSentimentos />} />
               <Route path="/inconsistencias" element={<Inconsistencias />} />
               <Route path="/calendario-visual" element={<CalendarioVisual />} />
               <Route path="/fechamento" element={<FechamentoMes />} />

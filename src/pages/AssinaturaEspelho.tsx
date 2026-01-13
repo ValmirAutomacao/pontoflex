@@ -138,9 +138,13 @@ const AssinaturaEspelho: React.FC = () => {
                 query = query.eq('id', periodoId);
             }
 
-            const { data: periodos, error } = await query.limit(1).single();
+            const { data: periodos, error } = await query.limit(1).maybeSingle();
 
             if (error) throw error;
+            if (!periodos) {
+                setLoading(false);
+                return;
+            }
             setPeriodo(periodos);
 
             // Fetch summary for the employee in this period

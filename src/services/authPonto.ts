@@ -24,7 +24,7 @@ export const verificarSenhaPonto = async (
         .from('funcionarios')
         .select('user_id')
         .eq('id', funcionarioId)
-        .single();
+        .single(); // Keep this one as we expect the funcionario to exist if we have its ID from auth flow or list
 
     if (funcError || !funcionario?.user_id) {
         return { valid: false, error: 'Funcionário não encontrado' };
@@ -90,7 +90,7 @@ export const registrarPonto = async (params: {
         .eq('funcionario_id', params.funcionarioId)
         .eq('data_registro', dataRegistro)
         .eq('tipo_registro', params.tipoRegistro)
-        .single();
+        .maybeSingle();
 
     if (existente) {
         return { success: false, error: 'Registro já existe para este tipo hoje' };
@@ -140,7 +140,7 @@ export const registrarPonto = async (params: {
             .from('funcionarios')
             .select('is_externo, local_trabalho:local_trabalho_id(latitude, longitude, raio_metros)')
             .eq('id', params.funcionarioId)
-            .single();
+            .maybeSingle();
 
         const funcionario = funcDetails as any;
         const local = funcionario?.local_trabalho;
@@ -189,7 +189,7 @@ export const registrarPonto = async (params: {
             empresa_id: params.empresaId
         }])
         .select()
-        .single();
+        .maybeSingle();
 
     if (error) {
         // Se falhou por rede mas o status dizia conectado, tenta salvar offline
@@ -364,7 +364,7 @@ export const buscarSaldoBancoHoras = async (
         .from('banco_horas_saldo')
         .select('*, funcionarios(regra_horas_id, locais_trabalho(regra_horas_id))')
         .eq('funcionario_id', funcionarioId)
-        .single();
+        .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
         console.error('Erro ao buscar saldo:', error);
@@ -382,7 +382,7 @@ export const buscarSaldoBancoHoras = async (
                 .from('regra_horas_config')
                 .select('apelido')
                 .eq('id', regraId)
-                .single();
+                .maybeSingle();
             if (regraData) regraNome = regraData.apelido;
         } else {
             // Buscar nome da regra padrão da empresa
@@ -391,7 +391,7 @@ export const buscarSaldoBancoHoras = async (
                 .select('apelido')
                 .eq('is_default', true)
                 .limit(1)
-                .single();
+                .maybeSingle();
             if (defaultRegra) regraNome = defaultRegra.apelido + ' (Padrão)';
         }
     }

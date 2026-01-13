@@ -22,7 +22,8 @@ import {
     ShieldCheck,
     MapPin,
     ExternalLink,
-    Calculator
+    Calculator,
+    Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -61,6 +62,7 @@ interface RegistroAgrupado {
     total_horas?: string;
     saldo_minutos?: number;
     is_auto_filled?: boolean;
+    escala?: { id: string, nome: string };
     status: 'Completo' | 'Incompleto' | 'Falta';
 }
 
@@ -120,18 +122,25 @@ const ControlePonto = () => {
 
         setLoading(true);
         try {
-            const { registros, error } = await buscarRegistrosPeriodo({
-                empresaId: profile.empresa_id,
-                dataInicio,
-                dataFim
-            });
+            // 1. Buscar todos os colaboradores e escalas
+            const [funcRes, escRes, regRes] = await Promise.all([
+                supabase.from('funcionarios').select('id, nome, is_externo, escala_id, funcoes(nome), setores(nome)').eq('empresa_id', profile.empresa_id).eq('status', 'Ativo'),
+                supabase.from('escalas_servico').select('id, nome').eq('empresa_id', profile.empresa_id),
+                supabase.from('registros_ponto')
+                    .select('*, funcionarios(nome, is_externo, funcoes(nome), setores(nome))')
+                    .eq('empresa_id', profile.empresa_id)
+                    .gte('data_registro', dataInicio)
+                    .lte('data_registro', dataFim)
+            ]);
 
-            if (error) {
-                console.error(error);
-                return;
-            }
+            if (funcRes.error) throw funcRes.error;
 
-            const agrupados = agruparRegistros(registros);
+            const employees = funcRes.data || [];
+            const scales = escRes.data || [];
+            const registrations = regRes.data || [];
+
+            // 2. Agrupar registros por funcionário e data
+            const agrupados = agruparRegistrosMelhorado(employees, registrations, dataInicio, dataFim, scales);
             setRegistrosAgrupados(agrupados);
             calculateStats(agrupados);
         } catch (err) {
@@ -161,10 +170,40 @@ const ControlePonto = () => {
         });
     };
 
-    const handleOpenAjuste = (registro: RegistroPonto) => {
-        setSelectedRegistro(registro);
+    const handleOpenAjuste = (registro: any, employee?: any, date?: string, type?: string) => {
+        setSelectedRegistro(registro || {
+            funcionario_id: employee.id,
+            data_registro: date,
+            tipo_registro: type,
+            hora_registro: '08:00:00'
+        });
         setAjusteForm({
-            novaHora: registro.hora_registro.slice(0, 5),
+            novaHora: registro ? registro.hora_registro.slice(0, 5) : '08:00',
+            tipoJustificativaId: '',
+            observacoes: ''
+        });
+        setIsAdjustModalOpen(true);
+    };
+
+    const handleAddManualEntry = (employee: any, date: string, type: 'entrada' | 'saida_almoco' | 'retorno_almoco' | 'saida') => {
+        setSelectedRegistro({
+            id: `temp-${employee.id}-${date}-${type}`, // Temporary ID for new entries
+            funcionario_id: employee.id,
+            data_registro: date,
+            tipo_registro: type,
+            hora_registro: '08:00:00', // Default time, user will adjust
+            empresa_id: profile?.empresa_id || '',
+            metodo_autenticacao: 'manual',
+            observacoes: '',
+            localizacao_gps: null,
+            justificativa_id: null,
+            ajustado_por_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            status_ajuste: 'pendente'
+        });
+        setAjusteForm({
+            novaHora: '08:00',
             tipoJustificativaId: '',
             observacoes: ''
         });
@@ -176,15 +215,34 @@ const ControlePonto = () => {
 
         setSavingAjuste(true);
         try {
-            const result = await ajustarPonto({
-                registroPontoId: selectedRegistro.id,
-                horaOriginal: selectedRegistro.hora_registro,
-                horaAjustada: ajusteForm.novaHora + ':00',
-                tipoJustificativaId: ajusteForm.tipoJustificativaId || undefined,
-                observacoes: ajusteForm.observacoes || undefined,
-                ajustadoPorId: profile.funcionario_id,
-                empresaId: profile.empresa_id
-            });
+            let result;
+            if (selectedRegistro.id && !selectedRegistro.id.toString().startsWith('temp-')) {
+                result = await ajustarPonto({
+                    registroPontoId: selectedRegistro.id,
+                    horaOriginal: selectedRegistro.hora_registro,
+                    horaAjustada: ajusteForm.novaHora + ':00',
+                    tipoJustificativaId: ajusteForm.tipoJustificativaId || undefined,
+                    observacoes: (ajusteForm.observacoes || '') + ' (Ajuste via Controle)',
+                    ajustadoPorId: profile.funcionario_id,
+                    empresaId: profile.empresa_id
+                });
+            } else {
+                // Inserção Manual
+                const { error: insError } = await supabase
+                    .from('registros_ponto')
+                    .insert([{
+                        funcionario_id: selectedRegistro.funcionario_id,
+                        data_registro: selectedRegistro.data_registro,
+                        hora_registro: ajusteForm.novaHora + ':00',
+                        tipo_registro: selectedRegistro.tipo_registro,
+                        empresa_id: profile.empresa_id,
+                        metodo_autenticacao: 'manual',
+                        observacoes: (ajusteForm.observacoes || '') + ' (Inserção Manual pelo Gestor)'
+                    }]);
+
+                if (insError) throw insError;
+                result = { success: true };
+            }
 
             if (!result.success) {
                 alert(result.error);
@@ -341,134 +399,138 @@ const ControlePonto = () => {
                 ))}
             </div>
 
-            {/* Tabela */}
-            <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className={`border-b ${isDark ? 'bg-slate-800/30 border-slate-700/50' : 'bg-slate-50 border-slate-100'}`}>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Data</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Colaborador</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Entrada</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Almoço</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Retorno</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Saída</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Saldo</th>
-                                <th className={`px-4 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className={`divide-y ${isDark ? 'divide-slate-700/30' : 'divide-slate-100'}`}>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={8} className="px-4 py-20 text-center">
-                                        <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                                    </td>
-                                </tr>
-                            ) : filteredRegistros.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className={`px-4 py-20 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        Nenhum registro encontrado.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredRegistros.map((reg) => (
-                                    <tr key={`${reg.funcionario.id}-${reg.data}`} className={`transition-colors ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
-                                        <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                {new Date(reg.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{reg.funcionario.nome}</p>
-                                                    {reg.funcionario.is_externo && (
-                                                        <span className="px-1.5 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-400 text-[8px] font-bold uppercase tracking-wider border border-indigo-500/20">
-                                                            EXTERNO
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{reg.funcionario.funcao} • {reg.funcionario.setor}</p>
-                                            </div>
-                                        </td>
-                                        {[reg.entrada, reg.saida_almoco, reg.retorno_almoco, reg.saida].map((regPonto, idx) => (
-                                            <td key={idx} className="px-4 py-4">
-                                                <div className="flex flex-col gap-0.5 group">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className={`text-xs font-mono font-medium ${!regPonto ? (isDark ? 'text-slate-700' : 'text-slate-300') :
-                                                            idx === 0 ? 'text-primary-500' :
-                                                                idx === 1 ? 'text-amber-500' :
-                                                                    idx === 2 ? 'text-emerald-500' : 'text-rose-500'
-                                                            }`}>
-                                                            {formatHora(regPonto)}
-                                                            {idx === 3 && reg.is_auto_filled && <span className="ml-1 text-[8px] opacity-70">(Auto)</span>}
-                                                        </span>
-                                                        {regPonto && (
-                                                            <button
-                                                                onClick={() => handleOpenAjuste(regPonto)}
-                                                                className={`p-1 rounded transition-all opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-slate-700 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}
-                                                            >
-                                                                <Edit3 size={10} />
-                                                            </button>
-                                                        )}
+            {/* Tabela Agrupada por Escala */}
+            <div className="space-y-6">
+                {loading ? (
+                    <div className={`rounded-xl border p-20 text-center ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-200'}`}>
+                        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-sm opacity-50">Carregando auditoria...</p>
+                    </div>
+                ) : Object.keys(groupByScale(filteredRegistros)).length === 0 ? (
+                    <div className={`rounded-xl border p-20 text-center ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-200'}`}>
+                        <p className="text-sm opacity-50">Nenhum dado encontrado para o período.</p>
+                    </div>
+                ) : (
+                    Object.entries(groupByScale(filteredRegistros)).map(([scaleName, regs]) => (
+                        <div key={scaleName} className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-200 shadow-sm'}`}>
+                            <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'bg-slate-800/80 border-slate-700/50' : 'bg-slate-50 border-slate-100'}`}>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-primary-500/10 text-primary-500 flex items-center justify-center font-bold text-xs">
+                                        {regs.length}
+                                    </div>
+                                    <h3 className="font-bold text-sm uppercase tracking-wider">{scaleName}</h3>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className={`border-b ${isDark ? 'bg-slate-800/30 border-slate-700/50' : 'bg-white/50 border-slate-100'}`}>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Colaborador</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Data</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Entrada</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Almoço</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Retorno</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Saída</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Saldo</th>
+                                            <th className={`px-6 py-4 text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className={`divide-y ${isDark ? 'divide-slate-700/30' : 'divide-slate-100'}`}>
+                                        {regs.map((reg) => (
+                                            <tr key={`${reg.funcionario.id}-${reg.data}`} className={`transition-colors ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{reg.funcionario.nome}</p>
+                                                            {reg.funcionario.is_externo && (
+                                                                <span className="px-1.5 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-400 text-[8px] font-bold uppercase tracking-wider border border-indigo-500/20">
+                                                                    EXTERNO
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{reg.funcionario.funcao} • {reg.funcionario.setor}</p>
                                                     </div>
-                                                    {regPonto && (regPonto as any).localizacao_gps?.lat && (
-                                                        <a
-                                                            href={`https://www.google.com/maps?q=${(regPonto as any).localizacao_gps.lat},${(regPonto as any).localizacao_gps.lng}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`flex items-center gap-0.5 text-[8px] transition-colors ${isDark ? 'text-slate-600 hover:text-primary-400' : 'text-slate-400 hover:text-primary-600'}`}
-                                                            title={`Lat: ${(regPonto as any).latitude}, Lng: ${(regPonto as any).longitude}`}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                        {new Date(reg.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                                    </span>
+                                                </td>
+                                                {[reg.entrada, reg.saida_almoco, reg.retorno_almoco, reg.saida].map((regPonto, idx) => (
+                                                    <td key={idx} className="px-6 py-4">
+                                                        <div className="flex flex-col gap-0.5 group">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className={`text-xs font-mono font-medium ${!regPonto ? (isDark ? 'text-slate-700' : 'text-slate-300') :
+                                                                    idx === 0 ? 'text-primary-500' :
+                                                                        idx === 1 ? 'text-amber-500' :
+                                                                            idx === 2 ? 'text-emerald-500' : 'text-rose-500'
+                                                                    }`}>
+                                                                    {formatHora(regPonto)}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => handleOpenAjuste(regPonto, reg.funcionario, reg.data, ['entrada', 'saida_almoco', 'retorno_almoco', 'saida'][idx])}
+                                                                    className={`p-1 rounded transition-all ${!regPonto ? 'opacity-20 group-hover:opacity-100 hover:bg-primary-500/10 text-primary-500' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-700 text-slate-500'}`}
+                                                                >
+                                                                    {!regPonto ? <Plus size={10} /> : <Edit3 size={10} />}
+                                                                </button>
+                                                            </div>
+                                                            {regPonto && (regPonto as any).latitude && (
+                                                                <a
+                                                                    href={`https://www.google.com/maps?q=${(regPonto as any).latitude},${(regPonto as any).longitude}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className={`flex items-center gap-0.5 text-[8px] transition-colors ${isDark ? 'text-slate-600 hover:text-primary-400' : 'text-slate-400 hover:text-primary-600'}`}
+                                                                >
+                                                                    <MapPin size={8} /> Localização
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                                <td className="px-6 py-4">
+                                                    <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>{reg.total_horas || '-'}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-xs font-bold ${reg.saldo_minutos !== undefined && reg.saldo_minutos >= 0
+                                                            ? (isDark ? 'text-emerald-400' : 'text-emerald-600')
+                                                            : (isDark ? 'text-rose-400' : 'text-rose-600')
+                                                            }`}>
+                                                            {reg.saldo_minutos !== undefined ? (
+                                                                <>
+                                                                    {reg.saldo_minutos >= 0 ? '+' : ''}
+                                                                    {Math.floor(Math.abs(reg.saldo_minutos) / 60)}h {Math.abs(reg.saldo_minutos) % 60}m
+                                                                </>
+                                                            ) : '-'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleRecalculate(reg.funcionario.id, reg.data)}
+                                                            disabled={recalculating === `${reg.funcionario.id}-${reg.data}`}
+                                                            className={`p-1 rounded-md transition-all ${isDark ? 'hover:bg-slate-700 text-slate-500' : 'hover:bg-slate-100 text-slate-400'} hover:text-primary-500`}
+                                                            title="Recalcular Banco/HE"
                                                         >
-                                                            <MapPin size={8} /> Localização <ExternalLink size={6} />
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </td>
+                                                            <Calculator size={12} className={recalculating === `${reg.funcionario.id}-${reg.data}` ? 'animate-spin' : ''} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${reg.status === 'Completo' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') :
+                                                        reg.status === 'Falta' ? (isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600') :
+                                                            (isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')
+                                                        }`}>
+                                                        {reg.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
                                         ))}
-                                        <td className="px-4 py-4">
-                                            <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>{reg.total_horas || '-'}</span>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-bold ${reg.saldo_minutos !== undefined && reg.saldo_minutos >= 0
-                                                    ? (isDark ? 'text-emerald-400' : 'text-emerald-600')
-                                                    : (isDark ? 'text-rose-400' : 'text-rose-600')
-                                                    }`}>
-                                                    {reg.saldo_minutos !== undefined ? (
-                                                        <>
-                                                            {reg.saldo_minutos >= 0 ? '+' : ''}
-                                                            {Math.floor(Math.abs(reg.saldo_minutos) / 60)}h {Math.abs(reg.saldo_minutos) % 60}m
-                                                        </>
-                                                    ) : '-'}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleRecalculate(reg.funcionario.id, reg.data)}
-                                                    disabled={recalculating === `${reg.funcionario.id}-${reg.data}`}
-                                                    className={`p-1 rounded-md transition-all ${isDark ? 'hover:bg-slate-700 text-slate-500' : 'hover:bg-slate-100 text-slate-400'} hover:text-primary-500`}
-                                                    title="Recalcular Banco/HE"
-                                                >
-                                                    <Calculator size={12} className={recalculating === `${reg.funcionario.id}-${reg.data}` ? 'animate-spin' : ''} />
-                                                </button>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-4 py-4">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${reg.status === 'Completo' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') :
-                                                reg.status === 'Falta' ? (isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600') :
-                                                    (isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')
-                                                }`}>
-                                                {reg.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div >
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
 
             {/* Modal Ajuste */}
             <AnimatePresence>
@@ -565,68 +627,81 @@ const ControlePonto = () => {
 
 export default ControlePonto;
 
-export const agruparRegistros = (registros: any[]): RegistroAgrupado[] => {
-    const grupos: { [key: string]: RegistroAgrupado } = {};
+// Helper to group by scale
+const groupByScale = (registros: RegistroAgrupado[]) => {
+    return registros.reduce((acc: { [key: string]: RegistroAgrupado[] }, reg) => {
+        const scaleName = reg.escala?.nome || 'Sem Escala Definida';
+        if (!acc[scaleName]) acc[scaleName] = [];
+        acc[scaleName].push(reg);
+        return acc;
+    }, {});
+};
 
-    registros.forEach(reg => {
-        const key = `${reg.funcionario_id}-${reg.data_registro}`;
+export const agruparRegistrosMelhorado = (
+    employees: any[],
+    registrations: any[],
+    startDate: string,
+    endDate: string,
+    scales: any[]
+): RegistroAgrupado[] => {
+    const agrupados: RegistroAgrupado[] = [];
+    const regMap: { [key: string]: any } = {};
 
-        if (!grupos[key]) {
-            grupos[key] = {
-                data: reg.data_registro,
+    // 1. Criar um mapa de registros para busca rápida: f_id-data-tipo
+    registrations.forEach(reg => {
+        const key = `${reg.funcionario_id}-${reg.data_registro}-${reg.tipo_registro}`;
+        regMap[key] = reg;
+    });
+
+    // 2. Iterar por cada dia do período
+    const start = new Date(startDate + 'T12:00:00');
+    const end = new Date(endDate + 'T12:00:00');
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+
+        // 3. Para cada dia, iterar por todos os funcionários
+        employees.forEach(emp => {
+            const row: RegistroAgrupado = {
+                data: dateStr,
                 funcionario: {
-                    id: reg.funcionario_id,
-                    nome: reg.funcionarios?.nome || 'Desconhecido',
-                    funcao: reg.funcionarios?.funcoes?.nome,
-                    setor: reg.funcionarios?.setores?.nome,
-                    jornada: reg.funcionarios?.jornada,
-                    is_externo: reg.funcionarios?.is_externo
+                    id: emp.id,
+                    nome: emp.nome,
+                    funcao: emp.funcoes?.nome,
+                    setor: emp.setores?.nome,
+                    is_externo: emp.is_externo
                 },
+                escala: scales.find(s => s.id === emp.escala_id),
                 status: 'Incompleto'
             };
-        }
-        (grupos[key] as any)[reg.tipo_registro] = reg;
-    });
 
-    return Object.values(grupos).map(grupo => {
-        const temEntrada = !!grupo.entrada;
-        let temSaida = !!grupo.saida;
-        const jornada = grupo.funcionario.jornada;
+            // Mapear tipos
+            row.entrada = regMap[`${emp.id}-${dateStr}-entrada`];
+            row.saida_almoco = regMap[`${emp.id}-${dateStr}-saida_almoco`];
+            row.retorno_almoco = regMap[`${emp.id}-${dateStr}-retorno_almoco`];
+            row.saida = regMap[`${emp.id}-${dateStr}-saida`];
 
-        // Lógica de Preenchimento Automático
-        if (temEntrada && !temSaida && jornada?.preencher_saida_automatica) {
-            grupo.is_auto_filled = true;
-            temSaida = true;
-            // Criar um registro virtual de saída
-            grupo.saida = {
-                id: 'auto-' + Math.random(),
-                hora_registro: jornada.ss || '18:00:00',
-                tipo_registro: 'saida',
-                data_registro: grupo.data
-            } as any;
-        }
+            // Calcular Status e Totais
+            const temEntrada = !!row.entrada;
+            const temSaida = !!row.saida;
 
-        if (temEntrada && temSaida) {
-            grupo.status = 'Completo';
-            if (grupo.entrada && grupo.saida) {
-                const entrada = new Date(`2000-01-01T${grupo.entrada.hora_registro}`);
-                const saida = new Date(`2000-01-01T${grupo.saida.hora_registro}`);
+            if (temEntrada && temSaida) {
+                row.status = 'Completo';
+                const entrada = new Date(`2000-01-01T${row.entrada!.hora_registro}`);
+                const saida = new Date(`2000-01-01T${row.saida!.hora_registro}`);
                 let diffMs = saida.getTime() - entrada.getTime();
-
-                // Se for negativo (virada de dia), somamos 24h
                 if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
 
-                const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                grupo.total_horas = `${hours}h ${minutes}m`;
-
-                if (jornada?.carga_horaria_diaria) {
-                    grupo.saldo_minutos = Math.floor(diffMs / (1000 * 60)) - jornada.carga_horaria_diaria;
-                }
+                const h = Math.floor(diffMs / 3600000);
+                const m = Math.floor((diffMs % 3600000) / 60000);
+                row.total_horas = `${h}h ${m}m`;
+            } else if (!temEntrada && !temSaida) {
+                row.status = 'Falta';
             }
-        } else if (!temEntrada && !temSaida) {
-            grupo.status = 'Falta';
-        }
-        return grupo;
-    });
+
+            agrupados.push(row);
+        });
+    }
+
+    return agrupados.sort((a, b) => b.data.localeCompare(a.data) || a.funcionario.nome.localeCompare(b.funcionario.nome));
 };

@@ -1,291 +1,251 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { supabase } from '../services/supabaseClient';
 import {
     FileText,
-    Download,
-    Printer,
-    Calendar,
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    TrendingUp,
-    TrendingDown,
+    Users,
     Clock,
-    Percent
+    Activity,
+    AlertCircle,
+    Heart,
+    ChevronRight,
+    Search,
+    Filter,
+    ArrowUpRight,
+    TrendingUp,
+    FilePieChart,
+    Calendar,
+    Download,
+    ShieldCheck
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
-interface RelatorioData {
-    funcionario_id: string;
-    funcionario_nome: string;
-    funcionario_cpf: string;
-    total_minutos_50: number;
-    total_minutos_100: number;
-    total_minutos_noturnos: number;
-    total_minutos_credito: number;
-    total_minutos_debito: number;
+interface ReportCard {
+    id: string;
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    path: string;
+    category: 'status' | 'gerencial' | 'sentimento';
+    isNew?: boolean;
 }
 
-const formatMinutes = (minutes: number): string => {
-    const absMinutes = Math.abs(minutes);
-    const hours = Math.floor(absMinutes / 60);
-    const mins = absMinutes % 60;
-    return `${hours}h ${mins}m`;
-};
+const reports: ReportCard[] = [
+    // Status dos Funcionários
+    {
+        id: 'status-dia',
+        title: 'Status do Dia',
+        description: 'Visão em tempo real de quem está presente, ausente ou em intervalo.',
+        icon: Activity,
+        path: '/status-live',
+        category: 'status'
+    },
+    {
+        id: 'inconsistencias',
+        title: 'Inconsistências e Faltas',
+        description: 'Lista de registros incompletos, atrasos e faltas não justificadas.',
+        icon: AlertCircle,
+        path: '/inconsistencias',
+        category: 'status',
+        isNew: true
+    },
+    {
+        id: 'sentimentos-dia',
+        title: 'Sentimentos do Dia',
+        description: 'Análise do humor e feedback dos colaboradores no registro.',
+        icon: Heart,
+        path: '/relatorios/sentimentos',
+        category: 'status'
+    },
+    // Gerenciais
+    {
+        id: 'consolidado',
+        title: 'Relatório Consolidado',
+        description: 'Totais de horas extras, banco e adicional noturno por período.',
+        icon: FilePieChart,
+        path: '/relatorios/consolidado',
+        category: 'gerencial'
+    },
+    {
+        id: 'espelho-ponto',
+        title: 'Espelho de Ponto',
+        description: 'Visualização detalhada da jornada individual de cada colaborador.',
+        icon: Calendar,
+        path: '/controle-ponto',
+        category: 'gerencial'
+    },
+    {
+        id: 'banco-horas',
+        title: 'Banco de Horas',
+        description: 'Saldo acumulado, compensações e histórico de banco.',
+        icon: TrendingUp,
+        path: '/banco-horas',
+        category: 'gerencial'
+    },
+    {
+        id: 'listagem-colaboradores',
+        title: 'Listagem de Colaboradores',
+        description: 'Dados cadastrais, funções, setores e escalas ativas.',
+        icon: Users,
+        path: '/colaboradores',
+        category: 'gerencial'
+    },
+    {
+        id: 'exportacao-folha',
+        title: 'Exportação Folha',
+        description: 'Gere arquivos formatados para importação em sistemas de folha.',
+        icon: Download,
+        path: '/exportacao-folha',
+        category: 'gerencial'
+    },
+    // Sentimentos
+    {
+        id: 'clima-organizacional',
+        title: 'Clima Organizacional',
+        description: 'Métricas de engajamento e satisfação ao longo do tempo.',
+        icon: Heart,
+        path: '/relatorios/clima',
+        category: 'sentimento',
+        isNew: true
+    }
+];
 
-const Relatorios: React.FC = () => {
-    const { profile } = useAuth();
+const CentralRelatorios: React.FC = () => {
     const { isDark } = useTheme();
-    const [data, setData] = useState<RelatorioData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [dateRange, setDateRange] = useState({
-        start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState<'all' | 'status' | 'gerencial' | 'sentimento'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredReports = reports.filter(report => {
+        const matchesTab = activeTab === 'all' || report.category === activeTab;
+        const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            report.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTab && matchesSearch;
     });
 
-    useEffect(() => {
-        if (profile?.empresa_id) {
-            fetchRelatorio();
-        }
-    }, [profile?.empresa_id]);
+    const categories = [
+        { id: 'all', label: 'Todos', icon: FileText },
+        { id: 'status', label: 'Status dos Funcionários', icon: Activity },
+        { id: 'gerencial', label: 'Gerenciais', icon: ShieldCheck },
+        { id: 'sentimento', label: 'Sentimentos', icon: Heart },
+    ];
 
-    const fetchRelatorio = async () => {
-        if (!profile?.empresa_id) return;
-        setLoading(true);
-        try {
-            const { data: reportData, error } = await supabase.rpc('get_relatorio_consolidado', {
-                p_empresa_id: profile.empresa_id,
-                p_start_date: dateRange.start,
-                p_end_date: dateRange.end
-            });
-
-            if (error) throw error;
-            setData(reportData || []);
-        } catch (error) {
-            console.error('Erro ao buscar relatório:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const filteredData = data.filter(item =>
-        item.funcionario_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.funcionario_cpf?.includes(searchTerm)
-    );
-
-    const totals = data.reduce((acc, curr) => ({
-        he50: acc.he50 + curr.total_minutos_50,
-        he100: acc.he100 + curr.total_minutos_100,
-        noturno: acc.noturno + curr.total_minutos_noturnos,
-        credito: acc.credito + curr.total_minutos_credito,
-        debito: acc.debito + curr.total_minutos_debito
-    }), { he50: 0, he100: 0, noturno: 0, credito: 0, debito: 0 });
-
-    const handleExportCSV = () => {
-        const headers = ['Funcionario', 'CPF', 'HE 50%', 'HE 100%', 'Noturno', 'Banco (Credito)', 'Banco (Debito)'];
-        const rows = data.map(item => [
-            item.funcionario_nome,
-            item.funcionario_cpf,
-            formatMinutes(item.total_minutos_50),
-            formatMinutes(item.total_minutos_100),
-            formatMinutes(item.total_minutos_noturnos),
-            formatMinutes(item.total_minutos_credito),
-            formatMinutes(item.total_minutos_debito)
-        ]);
-
-        const csvContent = "data:text/csv;charset=utf-8,"
-            + headers.join(',') + "\n"
-            + rows.map(r => r.join(',')).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `relatorio_consolidado_${dateRange.start}_${dateRange.end}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const cardClass = `rounded-2xl border ${isDark
-        ? 'bg-slate-800/50 border-slate-700/50'
-        : 'bg-white border-slate-200 shadow-soft'}`;
+    const cardClass = `group relative p-6 rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${isDark
+        ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800 hover:border-primary-500/50'
+        : 'bg-white border-slate-200 hover:border-primary-500/30'
+        }`;
 
     return (
-        <div className="p-8 pb-20 min-h-screen">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+        <div className="p-4 md:p-10 pb-32 min-h-screen">
+            {/* Header section with Stats or Welcome */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
-                    <h1 className={`text-3xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        Relatórios Consolidados
+                    <h1 className={`text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        Central de <span className="text-primary-500">Relatórios</span>
                     </h1>
                     <p className={`text-sm mt-2 font-medium opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Totais de horas extras e banco para fechamento de período
+                        Acompanhamento estratégico e auditoria de dados da empresa
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => window.print()}
-                        className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all border ${isDark
-                            ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm'}`}
-                    >
-                        <Printer size={16} />
-                        Imprimir
-                    </button>
-                    <button
-                        onClick={handleExportCSV}
-                        className="flex items-center gap-2 px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl font-bold text-sm transition-all shadow-glow"
-                    >
-                        <Download size={16} />
-                        Exportar CSV
-                    </button>
+                <div className="flex bg-primary-500/10 p-4 rounded-3xl border border-primary-500/20 items-center gap-4">
+                    <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-white shadow-glow">
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary-500">Total Disponível</p>
+                        <p className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{reports.length} Módulos</p>
+                    </div>
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className={`${cardClass} p-6 mb-8`}>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                    <div className="md:col-span-2">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Período de Referência</label>
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1 relative">
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                                <input
-                                    type="date"
-                                    value={dateRange.start}
-                                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all outline-none focus:ring-2 focus:ring-primary-500/20 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                />
+            {/* Navigation & Search */}
+            <div className="flex flex-col lg:flex-row justify-between gap-6 mb-10">
+                <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setActiveTab(cat.id as any)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === cat.id
+                                ? 'bg-primary-500 text-white shadow-glow'
+                                : isDark ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white' : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 border'
+                                }`}
+                        >
+                            <cat.icon size={16} />
+                            {cat.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="relative group min-w-[320px]">
+                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isDark ? 'text-slate-600 group-focus-within:text-primary-500' : 'text-slate-400 group-focus-within:text-primary-500'}`} size={18} />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar relatórios..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`w-full pl-12 pr-4 py-4 rounded-2xl border text-sm transition-all outline-none focus:ring-4 focus:ring-primary-500/10 ${isDark ? 'bg-slate-800/50 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                    />
+                </div>
+            </div>
+
+            {/* Reports Grid */}
+            <motion.div
+                layout
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+                <AnimatePresence mode="popLayout">
+                    {filteredReports.map((report) => (
+                        <motion.div
+                            key={report.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            onClick={() => navigate(report.path)}
+                            className={cardClass}
+                        >
+                            <div className="flex items-start justify-between mb-6">
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-3 ${isDark ? 'bg-slate-900 text-primary-400' : 'bg-primary-50 text-primary-600'}`}>
+                                    <report.icon size={28} />
+                                </div>
+                                {report.isNew && (
+                                    <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-emerald-500/20">
+                                        Novo
+                                    </span>
+                                )}
                             </div>
-                            <span className="opacity-40"><ChevronRight size={16} /></span>
-                            <div className="flex-1 relative">
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                                <input
-                                    type="date"
-                                    value={dateRange.end}
-                                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all outline-none focus:ring-2 focus:ring-primary-500/20 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                />
+
+                            <h3 className={`text-lg font-black mb-2 flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                {report.title}
+                                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all text-primary-500" />
+                            </h3>
+                            <p className={`text-xs leading-relaxed opacity-60 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {report.description}
+                            </p>
+
+                            <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center shadow-glow">
+                                    <ChevronRight size={18} />
+                                </div>
                             </div>
-                            <button
-                                onClick={fetchRelatorio}
-                                className="px-6 py-2.5 bg-slate-900 dark:bg-primary-500 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg"
-                            >
-                                Gerar
-                            </button>
-                        </div>
-                    </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </motion.div>
 
-                    <div className="md:col-span-2 relative group">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Buscar Colaborador</label>
-                        <div className="relative">
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" />
-                            <input
-                                type="text"
-                                placeholder="Nome ou CPF..."
-                                className={`w-full pl-12 pr-4 py-2.5 rounded-xl border text-sm transition-all outline-none focus:ring-2 focus:ring-primary-500/20 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+            {/* Empty State */}
+            {filteredReports.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
+                        <Search size={32} className="opacity-20" />
                     </div>
+                    <h3 className="text-xl font-bold mb-2">Nenhum relatório encontrado</h3>
+                    <p className="opacity-50 max-w-xs transition-all">Não encontramos nenhum relatório que corresponda à sua pesquisa ou categoria selecionada.</p>
                 </div>
-            </div>
-
-            {/* Quick Summary Totals */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                {[
-                    { label: 'Total HE 50%', value: totals.he50, icon: Percent, color: 'text-primary-500', bg: 'bg-primary-500/10' },
-                    { label: 'Total HE 100%', value: totals.he100, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Total Noturno', value: totals.noturno, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                    { label: 'Crédito Banco', value: totals.credito, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Débito Banco', value: totals.debito, icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                ].map((stat, i) => (
-                    <div key={i} className={`${cardClass} p-5 flex items-center justify-between`}>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{stat.label}</p>
-                            <p className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatMinutes(stat.value)}</p>
-                        </div>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.bg}`}>
-                            <stat.icon size={18} className={stat.color} />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Table */}
-            <div className={`${cardClass} overflow-hidden`}>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className={`border-b ${isDark ? 'border-slate-700/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50'}`}>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40">Colaborador</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">HE 50%</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">HE 100%</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">Noturno</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">Banco (C)</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">Banco (D)</th>
-                            </tr>
-                        </thead>
-                        <tbody className={`divide-y ${isDark ? 'divide-slate-700/30' : 'divide-slate-100'}`}>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
-                                        <div className="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                                        <p className="text-sm font-medium opacity-40">Processando consolidação...</p>
-                                    </td>
-                                </tr>
-                            ) : filteredData.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center opacity-40 text-sm font-medium">
-                                        Nenhum registro encontrado para este período.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredData.map((item) => (
-                                    <tr key={item.funcionario_id} className={`transition-colors ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
-                                        <td className="px-6 py-4">
-                                            <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.funcionario_nome}</p>
-                                            <p className="text-[10px] font-medium opacity-40">{item.funcionario_cpf}</p>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.total_minutos_50 > 0 ? (isDark ? 'bg-primary-500/10 text-primary-400' : 'bg-primary-50 text-primary-600') : 'opacity-20'}`}>
-                                                {formatMinutes(item.total_minutos_50)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.total_minutos_100 > 0 ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : 'opacity-20'}`}>
-                                                {formatMinutes(item.total_minutos_100)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.total_minutos_noturnos > 0 ? (isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : 'opacity-20'}`}>
-                                                {formatMinutes(item.total_minutos_noturnos)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.total_minutos_credito > 0 ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : 'opacity-20'}`}>
-                                                {formatMinutes(item.total_minutos_credito)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.total_minutos_debito > 0 ? (isDark ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600') : 'opacity-20'}`}>
-                                                {formatMinutes(item.total_minutos_debito)}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            )}
         </div>
     );
 };
 
-export default Relatorios;
+export default CentralRelatorios;
