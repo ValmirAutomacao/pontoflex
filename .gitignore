@@ -48,5 +48,7 @@ frame_*.png
 analise_tiquetaque/
 
 # Documentation (as requested)
-*.md
+# Allow important documentation files
+!DOCUMENTACAO_TECNICA.md
+!HOMOLOGACAO.md
 !README.md
